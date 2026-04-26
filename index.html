@@ -39,6 +39,8 @@
             margin: 10px 0;
             border-radius: 5px;
             border: none;
+            background: #333;
+            color: white;
         }
 
         button {
@@ -50,16 +52,19 @@
             font-weight: bold;
             cursor: pointer;
             border-radius: 5px;
+            margin-top: 10px;
         }
 
-        #mensaje-servidor { font-size: 0.8em; margin-top: 10px; }
+        button:hover { background: #00cc00; }
+
+        #mensaje-servidor { font-size: 0.8em; margin-top: 10px; min-height: 1em; }
 
         /* UI DEL JUEGO */
         #ui { 
             position: absolute; top: 20px; left: 20px; color: white; 
             font-family: 'Courier New', Courier, monospace; pointer-events: none; 
             text-shadow: 2px 2px 2px #000;
-            display: none; /* Oculto hasta que inicie el juego */
+            display: none; 
         }
         .timer { color: #ffcc00; font-size: 1.2em; }
         #dashCount { color: #00ffff; font-weight: bold; margin-top: 5px; }
@@ -92,22 +97,28 @@
 
 <script>
 // --- CONFIGURACIÓN DE RED ---
-// Cambia esta URL por la de tu servidor de Render cuando lo despliegues
-const socket = io("https://tu-servidor-en-render.com"); 
+// ¡IMPORTANTE! Reemplaza la URL de abajo por tu link azul de Render
+const socket = io("https://server-solo-un-punto.onrender.com"); 
 
-let juegoIniciado = false; // EL INTERRUPTOR PRINCIPAL
+let juegoIniciado = false; 
 
 // --- REGISTRO CON MONGODB ---
 function registrar() {
     const user = document.getElementById('reg-user').value;
     const email = document.getElementById('reg-email').value;
     const pass = document.getElementById('reg-pass').value;
+    const mensaje = document.getElementById('mensaje-servidor');
 
     if(!user || !email || !pass) {
-        alert("Por favor llena todos los campos");
+        mensaje.innerText = "⚠️ Por favor llena todos los campos";
+        mensaje.style.color = "yellow";
         return;
     }
 
+    mensaje.innerText = "⏳ Conectando con el servidor...";
+    mensaje.style.color = "white";
+
+    // Enviamos los datos al servidor corregido
     socket.emit('registrar_usuario', {
         username: user,
         email: email,
@@ -115,20 +126,22 @@ function registrar() {
     });
 }
 
+// Escuchamos la respuesta del servidor
 socket.on('registro_resultado', (data) => {
     const mensaje = document.getElementById('mensaje-servidor');
     if (data.exito) {
-        // ACTIVAR EL JUEGO
+        alert("✅ " + data.mensaje);
         document.getElementById('pantalla-inicio').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
         juegoIniciado = true;
+        spawnPlayerSafely(); // Reiniciamos posición al entrar
     } else {
-        mensaje.innerText = data.mensaje;
+        mensaje.innerText = "❌ " + data.mensaje;
         mensaje.style.color = "red";
     }
 });
 
-// --- LÓGICA DEL JUEGO (TU CÓDIGO) ---
+// --- LÓGICA DEL JUEGO ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -143,7 +156,6 @@ let players = {};
 socket.on('state', (serverPlayers) => { players = serverPlayers; });
 
 const WORLD_SIZE = 5000; 
-const DASH_COOLDOWN_TIME = 360; 
 let gameOver = false;
 
 const player = {
@@ -151,38 +163,16 @@ const player = {
     y: WORLD_SIZE / 2,
     radius: 12,
     speed: 5,
-    hasWeapon: false,
     angle: 0,
-    dashCooldown: 0,
-    isDashing: false,
-    superDashCharges: 0,
-    outOfZoneTime: 0,
-    walkCycle: 0,
     isMoving: false
 };
 
-// --- MUROS Y COLISIONES ---
+// --- MUROS ---
 let walls = [];
-function createWall(x, y, w, h, isHorizontal) {
-    if (Math.random() < 0.3) {
-        let gapSize = player.radius * 2.8; 
-        if (isHorizontal) {
-            walls.push({x: x, y: y, w: w/2 - gapSize/2, h: h});
-            walls.push({x: x + w/2 + gapSize/2, y: y, w: w/2 - gapSize/2, h: h});
-        } else {
-            walls.push({x: x, y: y, w: w, h: h/2 - gapSize/2});
-            walls.push({x: x, y: y + h/2 + gapSize/2, w: w, h: h/2 - gapSize/2});
-        }
-    } else {
-        walls.push({x: x, y: y, w: w, h: h});
-    }
-}
-
 for(let i=0; i<100; i++) {
     let wx = Math.random() * (WORLD_SIZE - 400) + 200;
     let wy = Math.random() * (WORLD_SIZE - 400) + 200;
-    if(Math.random() > 0.5) createWall(wx, wy, 300, 25, true);
-    else createWall(wx, wy, 25, 300, false);
+    walls.push({x: wx, y: wy, w: 300, h: 25});
 }
 
 function checkWallCollision(px, py) {
@@ -201,70 +191,46 @@ function spawnPlayerSafely() {
         if (!checkWallCollision(player.x, player.y)) safe = true;
     }
 }
-spawnPlayerSafely();
 
-let items = [];
-for(let i=0; i<80; i++) items.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, w: 30, h: 15, active: true, type: 'weapon' });
-for(let i=0; i<20; i++) items.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, radius: 10, active: true, type: 'superdash' });
+// --- CONTROLES BÁSICOS (MOUSE/TOUCH) ---
+let targetPos = { x: player.x, y: player.y };
 
-let zone = {
-    x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, radius: WORLD_SIZE / 1.2,
-    targetX: WORLD_SIZE / 2, targetY: WORLD_SIZE / 2, targetRadius: WORLD_SIZE / 1.2,
-    phase: 1, isShrinking: false, timeLeft: 180 
-};
+canvas.addEventListener('mousedown', (e) => {
+    if(!juegoIniciado) return;
+    updateTarget(e.clientX, e.clientY);
+});
 
-// --- CONTROLES ---
-let isMobile = ('ontouchstart' in window);
-let joystick = { active: false, id: null, startX: 100, startY: 0, curX: 100, curY: 0, moveX: 0, moveY: 0 };
-let dashBtn = { x: 0, y: 0, radius: 45 };
-
-function updateControlPositions() {
-    joystick.startY = canvas.height - 120;
-    dashBtn.x = canvas.width - 100;
-    dashBtn.y = canvas.height - 100;
-}
-updateControlPositions();
-
-if (isMobile) {
-    canvas.addEventListener('touchstart', e => {
-        if (!juegoIniciado) return;
-        e.preventDefault();
-        for (let t of e.changedTouches) {
-            let distDash = Math.hypot(t.clientX - dashBtn.x, t.clientY - dashBtn.y);
-            if (distDash < dashBtn.radius) startDash();
-            else if (t.clientX < canvas.width / 2 && !joystick.active) {
-                joystick.active = true; joystick.id = t.identifier;
-                joystick.startX = t.clientX; joystick.startY = t.clientY;
-            }
-        }
-    }, { passive: false });
-    // (Añadir eventos touchmove y touchend aquí como los tenías)
+function updateTarget(screenX, screenY) {
+    // Convertir clic de pantalla a coordenadas del mundo
+    targetPos.x = player.x + (screenX - canvas.width/2) / 0.6;
+    targetPos.y = player.y + (screenY - canvas.height/2) / 0.6;
 }
 
 function update() {
-    if (gameOver || !juegoIniciado) return; // NO ACTUALIZAR SI NO HA INICIADO
+    if (gameOver || !juegoIniciado) return;
     
-    let vx = 0, vy = 0;
-    if (isMobile && joystick.active) { vx = joystick.moveX; vy = joystick.moveY; }
-    
-    player.isMoving = Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1;
-    let speed = player.isDashing ? player.speed * 3 : player.speed;
-    
-    let nextX = player.x + vx * speed, nextY = player.y + vy * speed;
-    if (!checkWallCollision(nextX, player.y)) player.x = nextX;
-    if (!checkWallCollision(player.x, nextY)) player.y = nextY;
-    
-    if (player.isMoving) { player.angle = Math.atan2(vy, vx); player.walkCycle += 0.15; }
-    if (player.dashCooldown > 0) player.dashCooldown--;
+    let dx = targetPos.x - player.x;
+    let dy = targetPos.y - player.y;
+    let dist = Math.hypot(dx, dy);
 
-    // Zona y colisiones con ítems (se mantiene igual)
-    // ...
+    if (dist > 5) {
+        let vx = (dx / dist) * player.speed;
+        let vy = (dy / dist) * player.speed;
+        
+        if (!checkWallCollision(player.x + vx, player.y)) player.x += vx;
+        if (!checkWallCollision(player.x, player.y + vy)) player.y += vy;
+        
+        player.angle = Math.atan2(vy, vx);
+        
+        // Enviar movimiento al servidor
+        socket.emit('move', { x: player.x, y: player.y, angle: player.angle });
+    }
 }
 
 function draw() {
     if (!juegoIniciado) {
         requestAnimationFrame(draw);
-        return; // Detener el dibujo si no ha iniciado
+        return; 
     }
 
     update();
@@ -275,43 +241,33 @@ function draw() {
     ctx.scale(0.6, 0.6); 
     ctx.translate(-player.x, -player.y); 
 
-    walls.forEach(w => { ctx.fillStyle = "#444"; ctx.fillRect(w.x, w.y, w.w, w.h); });
-    ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2);
-    ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 15; ctx.stroke();
+    // Dibujar Muros
+    ctx.fillStyle = "#444";
+    walls.forEach(w => { ctx.fillRect(w.x, w.y, w.w, w.h); });
 
-    items.forEach(item => { 
-        if(item.active) {
-            ctx.fillStyle = item.type === 'weapon' ? "red" : "#00ffff";
-            if(item.type === 'weapon') ctx.fillRect(item.x, item.y, 30, 15);
-            else { ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill(); }
+    // Dibujar otros jugadores
+    for (let id in players) {
+        if (id !== socket.id) {
+            let p = players[id];
+            ctx.fillStyle = "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2); ctx.fill();
         }
-    });
+    }
 
-    // Dibujo del Jugador
+    // Dibujar mi Jugador
     ctx.save();
     ctx.translate(player.x, player.y);
     ctx.rotate(player.angle);
     ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI*2);
     ctx.fillStyle = "#00ff00";
     ctx.fill();
+    // Ojo para ver dirección
+    ctx.fillStyle = "white"; ctx.fillRect(8, -2, 6, 4);
     ctx.restore();
     
     ctx.restore();
-
-    // Dibujo de Controles Mobile
-    if(isMobile) {
-        ctx.beginPath(); ctx.arc(joystick.startX, joystick.startY, 50, 0, Math.PI*2); ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.stroke();
-        ctx.beginPath(); ctx.arc(dashBtn.x, dashBtn.y, dashBtn.radius, 0, Math.PI*2); ctx.fillStyle = "rgba(255, 255, 255, 0.3)"; ctx.fill();
-    }
-    
     requestAnimationFrame(draw);
 }
-
-setInterval(() => {
-    if (gameOver || !juegoIniciado) return;
-    if (zone.timeLeft > 0) zone.timeLeft--;
-    // Lógica de fases de zona...
-}, 1000);
 
 draw();
 </script>
