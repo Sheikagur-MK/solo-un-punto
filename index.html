@@ -13,6 +13,7 @@
             text-shadow: 2px 2px 2px #000;
         }
         .timer { color: #ffcc00; font-size: 1.2em; }
+        #dashCount { color: #00ffff; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -20,11 +21,276 @@
         <h2 id="status">BUSCA UN RECTÁNGULO</h2>
         <div id="faseInfo">FASE: 1</div>
         <div id="timer" class="timer">Zona: 03:00</div>
+        <div id="dashCount"></div>
     </div>
     <canvas id="gameCanvas"></canvas>
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    
-    <script src="game.js"></script>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+// --- 1. CONEXIÓN AL SERVIDOR (Añadir esto) ---
+const socket = io("https://sheikagur-mk.github.io/solo-un-punto/");
+
+// --- 2. RECIBIR DATOS DE OTROS JUGADORES ---
+let players = {};
+socket.on('state', (serverPlayers) => {
+    players = serverPlayers;
+});
+
+socket.on('playerMoved', (data) => {
+    players[data.id] = data;
+});
+
+socket.on('playerDisconnected', (id) => {
+    delete players[id];
+});
+
+// --- CONFIGURACIÓN ---
+const WORLD_SIZE = 5000; 
+const DASH_COOLDOWN_TIME = 360; 
+let gameOver = false;
+
+const player = {
+    x: WORLD_SIZE / 2,
+    y: WORLD_SIZE / 2,
+    radius: 12,
+    speed: 5,
+    hasWeapon: false,
+    angle: 0,
+    dashCooldown: 0,
+    isDashing: false,
+    superDashCharges: 0,
+    outOfZoneTime: 0,
+    walkCycle: 0,
+    isMoving: false
+};
+
+// --- GENERACIÓN DE MUROS ---
+let walls = [];
+function createWall(x, y, w, h, isHorizontal) {
+    if (Math.random() < 0.3) {
+        let gapSize = player.radius * 2.8; 
+        if (isHorizontal) {
+            walls.push({x: x, y: y, w: w/2 - gapSize/2, h: h});
+            walls.push({x: x + w/2 + gapSize/2, y: y, w: w/2 - gapSize/2, h: h});
+        } else {
+            walls.push({x: x, y: y, w: w, h: h/2 - gapSize/2});
+            walls.push({x: x, y: y + h/2 + gapSize/2, w: w, h: h/2 - gapSize/2});
+        }
+    } else {
+        walls.push({x: x, y: y, w: w, h: h});
+    }
+}
+
+// Generamos los muros primero
+for(let i=0; i<100; i++) {
+    let wx = Math.random() * (WORLD_SIZE - 400) + 200;
+    let wy = Math.random() * (WORLD_SIZE - 400) + 200;
+    if(Math.random() > 0.5) createWall(wx, wy, 300, 25, true);
+    else createWall(wx, wy, 25, 300, false);
+}
+
+// --- FUNCIÓN DE COLISIÓN ---
+function checkWallCollision(px, py) {
+    for (let wall of walls) {
+        if (px + player.radius > wall.x && px - player.radius < wall.x + wall.w &&
+            py + player.radius > wall.y && py - player.radius < wall.y + wall.h) return true;
+    }
+    return false;
+}
+
+// --- POSICIONAMIENTO SEGURO DEL JUGADOR ---
+// Buscamos un lugar donde el jugador no choque con ningún muro al nacer
+function spawnPlayerSafely() {
+    let safe = false;
+    while (!safe) {
+        player.x = Math.random() * (WORLD_SIZE - 1000) + 500;
+        player.y = Math.random() * (WORLD_SIZE - 1000) + 500;
+        if (!checkWallCollision(player.x, player.y)) {
+            safe = true;
+        }
+    }
+}
+spawnPlayerSafely(); // Ejecutamos al iniciar
+
+let items = [];
+for(let i=0; i<80; i++) items.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, w: 30, h: 15, active: true, type: 'weapon' });
+for(let i=0; i<20; i++) items.push({ x: Math.random() * WORLD_SIZE, y: Math.random() * WORLD_SIZE, radius: 10, active: true, type: 'superdash' });
+
+let zone = {
+    x: WORLD_SIZE / 2, y: WORLD_SIZE / 2, radius: WORLD_SIZE / 1.2,
+    targetX: WORLD_SIZE / 2, targetY: WORLD_SIZE / 2, targetRadius: WORLD_SIZE / 1.2,
+    phase: 1, isShrinking: false, timeLeft: 180 
+};
+
+// --- CONTROLES (Igual que antes) ---
+let isMobile = ('ontouchstart' in window);
+let joystick = { active: false, id: null, startX: 100, startY: 0, curX: 100, curY: 0, moveX: 0, moveY: 0 };
+let dashBtn = { x: 0, y: 0, radius: 45 };
+
+function updateControlPositions() {
+    joystick.startY = canvas.height - 120;
+    dashBtn.x = canvas.width - 100;
+    dashBtn.y = canvas.height - 100;
+}
+updateControlPositions();
+
+if (isMobile) {
+    canvas.addEventListener('touchstart', e => {
+        e.preventDefault();
+        for (let t of e.changedTouches) {
+            let distDash = Math.hypot(t.clientX - dashBtn.x, t.clientY - dashBtn.y);
+            if (distDash < dashBtn.radius) startDash();
+            else if (t.clientX < canvas.width / 2 && !joystick.active) {
+                joystick.active = true; joystick.id = t.identifier;
+                joystick.startX = t.clientX; joystick.startY = t.clientY;
+            }
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchmove', e => {
+        for (let t of e.changedTouches) {
+            if (joystick.active && t.identifier === joystick.id) {
+                joystick.curX = t.clientX; joystick.curY = t.clientY;
+                let dx = joystick.curX - joystick.startX, dy = joystick.curY - joystick.startY;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 0) {
+                    joystick.moveX = dx / dist * Math.min(dist, 50) / 50;
+                    joystick.moveY = dy / dist * Math.min(dist, 50) / 50;
+                }
+            }
+        }
+    }, { passive: false });
+    canvas.addEventListener('touchend', e => {
+        for (let t of e.changedTouches) if (joystick.id === t.identifier) { joystick.active = false; joystick.moveX = 0; joystick.moveY = 0; }
+    });
+}
+
+function startDash() {
+    if (player.dashCooldown <= 0 && !gameOver) {
+        player.isDashing = true;
+        player.dashCooldown = player.superDashCharges > 0 ? 15 : DASH_COOLDOWN_TIME; 
+        if (player.superDashCharges > 0) {
+            player.superDashCharges--;
+            document.getElementById('dashCount').innerText = player.superDashCharges > 0 ? `SUPER DASH: ${player.superDashCharges}` : "";
+        }
+        setTimeout(() => { player.isDashing = false; }, 200); 
+    }
+}
+
+function update() {
+    if (gameOver) return;
+    let vx = 0, vy = 0;
+    if (isMobile && joystick.active) { vx = joystick.moveX; vy = joystick.moveY; }
+    player.isMoving = Math.abs(vx) > 0.1 || Math.abs(vy) > 0.1;
+    let speed = player.isDashing ? player.speed * 3 : player.speed;
+    let nextX = player.x + vx * speed, nextY = player.y + vy * speed;
+    if (!checkWallCollision(nextX, player.y)) player.x = nextX;
+    if (!checkWallCollision(player.x, nextY)) player.y = nextY;
+    if (player.isMoving) { player.angle = Math.atan2(vy, vx); player.walkCycle += 0.15; } else { player.walkCycle = 0; }
+    if (player.dashCooldown > 0) player.dashCooldown--;
+
+    let distToZoneCenter = Math.hypot(player.x - zone.x, player.y - zone.y);
+    if (distToZoneCenter > zone.radius) {
+        player.outOfZoneTime += 1/60; 
+        if (player.outOfZoneTime >= 5) { gameOver = true; alert("ELIMINADO: Fuera de la zona"); location.reload(); }
+    } else { player.outOfZoneTime = 0; }
+
+    if (zone.isShrinking) {
+        zone.x += (zone.targetX - zone.x) * 0.005;
+        zone.y += (zone.targetY - zone.y) * 0.005;
+        if (zone.radius > zone.targetRadius) zone.radius -= 0.5;
+        else zone.isShrinking = false;
+    }
+
+    items.forEach(item => {
+        if(item.active) {
+            let d = Math.hypot(player.x - item.x, player.y - item.y);
+            if (item.type === 'weapon' && !player.hasWeapon && d < 30) {
+                item.active = false; player.hasWeapon = true;
+                document.getElementById('status').innerText = "ARMA EQUIPADA";
+            } else if (item.type === 'superdash' && d < 25) {
+                item.active = false; player.superDashCharges = 5;
+                player.dashCooldown = 0; document.getElementById('dashCount').innerText = `SUPER DASH: 5`;
+            }
+        }
+    });
+}
+
+function draw() {
+    update();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2); 
+    ctx.scale(0.6, 0.6); 
+    ctx.translate(-player.x, -player.y); 
+
+    walls.forEach(w => { ctx.fillStyle = "#444"; ctx.fillRect(w.x, w.y, w.w, w.h); });
+    ctx.beginPath(); ctx.arc(zone.x, zone.y, zone.radius, 0, Math.PI*2);
+    ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 15; ctx.stroke();
+
+    items.forEach(item => { 
+        if(item.active) {
+            ctx.fillStyle = item.type === 'weapon' ? "red" : "#00ffff";
+            if(item.type === 'weapon') ctx.fillRect(item.x, item.y, 30, 15);
+            else { ctx.beginPath(); ctx.arc(item.x, item.y, 10, 0, Math.PI*2); ctx.fill(); }
+        }
+    });
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    if (player.outOfZoneTime > 0) {
+        ctx.font = "bold 30px Arial"; ctx.textAlign = "center";
+        let timeLeft = (5 - player.outOfZoneTime).toFixed(1);
+        ctx.fillStyle = "black"; ctx.fillText("¡FUERA DE ZONA!", 0, -68); ctx.fillText(timeLeft + "s", 0, -38);
+        ctx.fillStyle = "#ff0000"; ctx.fillText("¡FUERA DE ZONA!", 0, -70); ctx.fillText(timeLeft + "s", 0, -40);
+    }
+    ctx.rotate(player.angle);
+    let s = player.isMoving ? 1 + Math.abs(Math.sin(player.walkCycle)) * 0.4 : 1;
+    ctx.scale(s, 1/s);
+    if (player.superDashCharges > 0) { ctx.beginPath(); ctx.arc(0, 0, player.radius + 6, 0, Math.PI*2); ctx.strokeStyle = "#00ffff"; ctx.lineWidth = 3; ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0, 0, player.radius, 0, Math.PI*2);
+    ctx.fillStyle = (Math.hypot(player.x-zone.x, player.y-zone.y) > zone.radius) ? "red" : "#00ff00";
+    ctx.fill();
+    if(player.hasWeapon) { ctx.fillStyle = "red"; ctx.fillRect(player.radius, -5, 25, 10); }
+    ctx.restore();
+    ctx.restore();
+
+    if(isMobile) {
+        ctx.beginPath(); ctx.arc(joystick.startX, joystick.startY, 50, 0, Math.PI*2); ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.stroke();
+        let jX = joystick.startX + (joystick.moveX * 50), jY = joystick.startY + (joystick.moveY * 50);
+        ctx.beginPath(); ctx.arc(jX, jY, 25, 0, Math.PI*2); ctx.fillStyle = "rgba(255,255,255,0.2)"; ctx.fill();
+        ctx.beginPath(); ctx.arc(dashBtn.x, dashBtn.y, dashBtn.radius, 0, Math.PI*2); ctx.fillStyle = player.dashCooldown > 0 ? "rgba(100, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.3)"; ctx.fill();
+        ctx.fillStyle = "white"; 
+        let txt = player.dashCooldown > 0 && player.superDashCharges === 0 ? (player.dashCooldown/60).toFixed(1) + "s" : "DASH";
+        ctx.fillText(txt, dashBtn.x - 15, dashBtn.y + 5);
+    }
+    requestAnimationFrame(draw);
+}
+
+setInterval(() => {
+    if (gameOver) return;
+    if (zone.timeLeft > 0) {
+        zone.timeLeft--;
+    } else if (!zone.isShrinking && zone.phase < 4) {
+        zone.isShrinking = true;
+        zone.phase++;
+        const faseLabel = document.getElementById('faseInfo');
+        faseLabel.innerText = zone.phase === 4 ? "FASE: FINAL" : "FASE: " + zone.phase;
+        zone.targetRadius *= 0.6;
+        zone.timeLeft = 120;
+    }
+    const mins = Math.floor(zone.timeLeft / 60), secs = zone.timeLeft % 60;
+    document.getElementById('timer').innerText = `Zona: ${mins}:${secs < 10 ? '0' : ''}${secs}`;
+}, 1000);
+
+draw();
+</script>
 </body>
 </html>
