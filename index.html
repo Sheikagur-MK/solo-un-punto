@@ -111,6 +111,12 @@
             <p id="msg-reg" class="mensaje"></p>
         </div>
     </div>
+    <div id="contenedor-espera" class="form-container">
+    <h3 id="rol-usuario">SALA DE ESPERA</h3>
+    <p style="font-size: 2.5em; color: #ffcc00;" id="contador-jugadores">1 / 100</p>
+    <p id="msg-espera" style="font-size: 0.8em; color: #888;">Esperando jugadores...</p>
+    <button id="btn-iniciar-host" style="display: none; background: #ffcc00;" onclick="solicitarInicio()">INICIAR PARTIDA</button>
+</div>
 
     <div id="ui">
         <h2 id="status">BUSCA UN RECTÁNGULO</h2>
@@ -192,7 +198,51 @@ socket.on('login_resultado', (data) => {
         msg.style.color = "red";
     }
 });
+// --- NUEVAS FUNCIONES DE SALA ---
 
+// Mostrar la sección de espera tras login exitoso
+socket.on('login_resultado', (data) => {
+    const msg = document.getElementById('msg-login');
+    if (data.exito) {
+        mostrarSeccion('contenedor-espera');
+    } else {
+        msg.innerText = "❌ " + data.mensaje;
+        msg.style.color = "red";
+    }
+});
+
+// Actualizar el estado del Lobby
+socket.on('actualizar_sala', (data) => {
+    document.getElementById('contador-jugadores').innerText = `${data.total} / 100`;
+    
+    if (socket.id === data.hostId) {
+        document.getElementById('rol-usuario').innerText = "ERES EL ANFITRIÓN";
+        document.getElementById('rol-usuario').style.color = "#00ffff";
+        
+        // El botón solo aparece si hay 2 o más
+        if (data.total >= 2) {
+            document.getElementById('btn-iniciar-host').style.display = 'block';
+            document.getElementById('msg-espera').innerText = "¡Puedes iniciar cuando quieras!";
+        } else {
+            document.getElementById('btn-iniciar-host').style.display = 'none';
+            document.getElementById('msg-espera').innerText = "Falta al menos 1 jugador más.";
+        }
+    } else {
+        document.getElementById('rol-usuario').innerText = "SALA DE ESPERA";
+        document.getElementById('msg-espera').innerText = "Esperando al anfitrión...";
+    }
+});
+
+function solicitarInicio() {
+    socket.emit('solicitar_inicio_partida');
+}
+
+socket.on('iniciar_partida', () => {
+    document.getElementById('pantalla-inicio').style.display = 'none';
+    document.getElementById('ui').style.display = 'block';
+    juegoIniciado = true;
+    spawnPlayerSafely();
+});
 // --- LÓGICA DEL JUEGO ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
