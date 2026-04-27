@@ -104,7 +104,7 @@ socket.on('iniciar_partida', d => { items = d.items; zona = d.zona; juegoIniciad
 function activarDash() {
     if(player.dashes > 0) { player.dashes--; player.lastDash = Date.now(); player.speed = 18; setTimeout(() => player.speed = 6, 250); }
 }
-
+    
 window.onkeydown = e => { keys[e.key] = true; if(e.key === ' ') activarDash(); };
 window.onkeyup = e => keys[e.key] = false;
 
