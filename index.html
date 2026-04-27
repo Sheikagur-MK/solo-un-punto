@@ -90,15 +90,35 @@ socket.on('actualizar_sala', d => {
     document.getElementById('txt-sala').innerText = `Jugadores en lobby: ${d.total}`;
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
-socket.on('registrar_usuario', async (datos) => {
-    try {
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(datos.password, salt);
-        const nuevoUsuario = new User({ ...datos, password: hashedPassword });
-        await nuevoUsuario.save(); // Aquí se guarda en MongoDB
-        socket.emit('registro_resultado', { exito: true });
-    } catch (e) { 
-        socket.emit('registro_resultado', { exito: false }); 
+// Función para cambiar entre Login y Registro
+function mostrarModo(modo) {
+    if(modo === 'login') {
+        document.getElementById('form-login').style.display = 'block';
+        document.getElementById('form-registro').style.display = 'none';
+    } else {
+        document.getElementById('form-login').style.display = 'none';
+        document.getElementById('form-registro').style.display = 'block';
+    }
+}
+
+// Función de Registro
+function registro() {
+    const datos = {
+        username: document.getElementById('r-user').value,
+        email: document.getElementById('r-email').value,
+        password: document.getElementById('r-pass').value
+    };
+    if(!datos.username || !datos.email || !datos.password) return alert("Llena todos los campos");
+    socket.emit('registrar_usuario', datos);
+}
+
+// Escuchar respuesta del servidor para el registro
+socket.on('registro_resultado', d => {
+    if(d.exito) {
+        alert("¡Cuenta creada con éxito! Ya puedes iniciar sesión.");
+        mostrarModo('login');
+    } else {
+        alert("Error: El usuario o correo ya existen.");
     }
 });
 socket.on('iniciar_partida', d => {
