@@ -10,35 +10,32 @@
         
         #pantalla-inicio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .form-container { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; display: none; }
-        .titulo-game { font-size: 3em; color: #00ff00; text-shadow: 0 0 15px #00ff00; margin-bottom: 30px; }
         button { width: 100%; padding: 12px; background: #00ff00; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
 
-        /* CONTROLES ANDROID */
+        /* JOYSTICK ANDROID */
         #ui-controles { position: absolute; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; }
         #joystick-area { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
-        #joystick-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00ff00; border-radius: 50%; }
+        #joystick-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00ff00; border-radius: 50%; pointer-events: none; }
         #btn-dash-touch { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: #00ffff; border-radius: 50%; pointer-events: auto; border: none; font-weight: bold; }
         
-        .ui-overlay { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; text-shadow: 2px 2px #000; display: none; }
-        #alerta-zona { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); color: #ff0000; font-size: 2em; font-weight: bold; display: none; text-align: center; }
+        .ui-overlay { position: absolute; top: 20px; left: 20px; color: white; pointer-events: none; }
     </style>
 </head>
 <body>
 
     <div id="pantalla-inicio">
-        <h1 class="titulo-game">SOLO UN PUNTO</h1>
-        <div id="menu-opciones" class="form-container" style="display: block; border: none;">
-            <button onclick="mostrarSeccion('contenedor-login')">INICIAR SESIÓN</button>
-            <button onclick="mostrarSeccion('contenedor-registro')" style="background:#333; color:white;">REGISTRARSE</button>
+        <h1>SOLO UN PUNTO</h1>
+        <div id="menu-opciones" class="form-container" style="display: block;">
+            <button onclick="mostrarSeccion('contenedor-login')">LOGIN</button>
         </div>
         <div id="contenedor-login" class="form-container">
-            <input type="email" id="login-email" placeholder="Correo">
-            <input type="password" id="login-pass" placeholder="Contraseña">
+            <input type="email" id="login-email" style="width:90%; margin:10px;" placeholder="Correo">
+            <input type="password" id="login-pass" style="width:90%; margin:10px;" placeholder="Pass">
             <button onclick="login()">ENTRAR</button>
         </div>
         <div id="contenedor-espera" class="form-container">
-            <h3 id="contador-jugadores">1 / 100</h3>
-            <button id="btn-iniciar-host" style="display: none;" onclick="solicitarInicio()">INICIAR PARTIDA</button>
+            <h3 id="contador-jugadores">1 Jugador</h3>
+            <button id="btn-iniciar-host" style="display: none;" onclick="solicitarInicio()">INICIAR</button>
         </div>
     </div>
 
@@ -47,7 +44,6 @@
         <button id="btn-dash-touch">DASH</button>
     </div>
 
-    <div id="alerta-zona">⚠️ REGRESA A LA ZONA<br><span id="timer-muerte">5s</span></div>
     <div id="ui-overlay" class="ui-overlay">
         <div id="dash-ui">DASH: 1 / 5</div>
         <div id="arma-ui">ARMA: NO</div>
@@ -57,12 +53,13 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+// ASEGÚRATE QUE ESTA URL SEA LA DE TU RENDER
 const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const BASE_WIDTH = 1280, BASE_HEIGHT = 720;
 
-let player = { x: 2500, y: 2500, r: 15, dashes: 1, lastDash: 0, hasWeapon: false, angle: 0, stretch: 1, vivo: true, speed: 6 };
+let player = { x: 2500, y: 2500, dashes: 1, lastDash: 0, hasWeapon: false, angle: 0, stretch: 1, vivo: true, speed: 6 };
 let players = {}, items = [], zona = { x: 2500, y: 2500, radio: 2500 }, juegoIniciado = false;
 let keys = {}, joyX = 0, joyY = 0;
 
@@ -75,15 +72,14 @@ function resize() {
     ctx.setTransform(scale, 0, 0, scale, 0, 0);
 }
 window.onresize = resize; resize();
-    
-// Joystick Logic
-const stick = document.getElementById('joystick-stick');
+
+// Joystick
 const area = document.getElementById('joystick-area');
+const stick = document.getElementById('joystick-stick');
 area.ontouchmove = e => {
     const t = e.touches[0]; const r = area.getBoundingClientRect();
     let dx = t.clientX - (r.left + 60), dy = t.clientY - (r.top + 60);
-    const dist = Math.hypot(dx, dy);
-    if(dist > 40) { dx *= 40/dist; dy *= 40/dist; }
+    const d = Math.hypot(dx, dy); if(d > 40) { dx *= 40/d; dy *= 40/d; }
     stick.style.transform = `translate(${dx}px, ${dy}px)`;
     joyX = dx/40; joyY = dy/40;
 };
@@ -98,8 +94,8 @@ function mostrarSeccion(id) {
 function login() { socket.emit('login_usuario', { email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value }); }
 socket.on('login_resultado', d => { if(d.exito) mostrarSeccion('contenedor-espera'); });
 socket.on('actualizar_sala', d => {
-    document.getElementById('contador-jugadores').innerText = `${d.total} / 100`;
-    if(socket.id === d.hostId && d.total >= 2) document.getElementById('btn-iniciar-host').style.display = 'block';
+    document.getElementById('contador-jugadores').innerText = d.total + " Jugadores";
+    if(socket.id === d.hostId && d.total >= 1) document.getElementById('btn-iniciar-host').style.display = 'block';
 });
 
 function solicitarInicio() { socket.emit('solicitar_inicio_partida'); }
@@ -115,7 +111,6 @@ window.onkeyup = e => keys[e.key] = false;
 function update() {
     if(!juegoIniciado || !player.vivo) return;
     
-    // Movimiento (PC + Joystick)
     let mx = joyX, my = joyY;
     if(keys['w'] || keys['ArrowUp']) my = -1;
     if(keys['s'] || keys['ArrowDown']) my = 1;
@@ -124,13 +119,11 @@ function update() {
 
     if(mx !== 0 || my !== 0) {
         player.x += mx * player.speed; player.y += my * player.speed;
-        player.angle = Math.atan2(my, mx); player.stretch = 1.5;
+        player.angle = Math.atan2(my, mx); player.stretch = 1.4;
     } else { player.stretch = 1; }
 
-    // Dash Recovery (6s)
     if(player.dashes === 0 && Date.now() - player.lastDash > 6000) player.dashes = 1;
 
-    // Items
     items.forEach(it => {
         if(Math.hypot(player.x - it.x, player.y - it.y) < 30) {
             if(it.type === 'weapon') player.hasWeapon = true;
@@ -139,13 +132,11 @@ function update() {
         }
     });
 
-    // Combate
     for(let id in players) {
         if(player.hasWeapon && Math.hypot(player.x - players[id].x, player.y - players[id].y) < 40) {
             socket.emit('eliminar_jugador', id);
         }
     }
-
     socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
 }
 
@@ -162,26 +153,26 @@ function draw() {
 
     ctx.save();
     ctx.translate(BASE_WIDTH/2, BASE_HEIGHT/2);
-    ctx.scale(isMobile ? 0.4 : 0.7, isMobile ? 0.4 : 0.7);
+    ctx.scale(isMobile ? 0.45 : 0.7, isMobile ? 0.45 : 0.7); // Zoom más alejado en móvil
     ctx.translate(-player.x, -player.y);
 
     // Zona
-    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
+    ctx.strokeStyle = "red"; ctx.lineWidth = 15;
     ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
 
     // Items
     items.forEach(it => {
         ctx.fillStyle = it.type === 'weapon' ? 'red' : 'cyan';
-        ctx.fillRect(it.x-10, it.y-10, 20, 20);
+        ctx.fillRect(it.x-12, it.y-12, 24, 24);
     });
 
     // Otros
     for(let id in players) {
         let p = players[id];
         ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-        ctx.fillStyle = "#666";
+        ctx.fillStyle = "#555";
         ctx.beginPath(); ctx.ellipse(0, 0, 15*p.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-        if(p.hasWeapon) { ctx.fillStyle = "red"; ctx.fillRect(15, -5, 25, 10); }
+        if(p.hasWeapon) { ctx.fillStyle = "red"; ctx.fillRect(15, -6, 25, 12); }
         ctx.restore();
     }
 
@@ -189,7 +180,7 @@ function draw() {
     ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = player.hasWeapon ? "cyan" : "lime";
     ctx.beginPath(); ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-    if(player.hasWeapon) { ctx.fillStyle = "red"; ctx.fillRect(15, -5, 25, 10); }
+    if(player.hasWeapon) { ctx.fillStyle = "red"; ctx.fillRect(15, -6, 25, 12); }
     ctx.restore();
 
     ctx.restore();
