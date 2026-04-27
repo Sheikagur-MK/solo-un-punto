@@ -8,7 +8,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
         canvas { display: block; }
 
-        /* PANTALLA DE INICIO / LOGIN */
+        /* CONTENEDOR PRINCIPAL DE UI */
         #pantalla-inicio {
             position: fixed;
             top: 0; left: 0;
@@ -22,14 +22,24 @@
             color: white;
             font-family: Arial, sans-serif;
         }
-           .form-container {
+        
+        .form-container {
             background: #222;
             padding: 20px;
             border-radius: 10px;
             border: 2px solid #00ff00;
             width: 80%;
-            max-width: 300px;
+            max-width: 320px;
             text-align: center;
+            display: none; /* Se controlan por JS */
+        }
+
+        /* TÍTULOS Y BOTONES */
+        .titulo-game {
+            font-size: 3em;
+            color: #00ff00;
+            text-shadow: 0 0 15px #00ff00;
+            margin-bottom: 30px;
         }
 
         input {
@@ -44,7 +54,7 @@
 
         button {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: #00ff00;
             border: none;
             color: black;
@@ -54,40 +64,57 @@
             margin-top: 10px;
         }
 
-        button:hover { background: #00cc00; }
+        button.secundario {
+            background: #444;
+            color: white;
+            margin-top: 15px;
+        }
 
-        #mensaje-servidor { font-size: 0.8em; margin-top: 10px; min-height: 1em; }
+        button:hover { opacity: 0.8; }
 
+        .mensaje { font-size: 0.85em; margin-top: 10px; min-height: 1.2em; }
+        
         /* UI DEL JUEGO */
         #ui { 
             position: absolute; top: 20px; left: 20px; color: white; 
             font-family: 'Courier New', Courier, monospace; pointer-events: none; 
-            text-shadow: 2px 2px 2px #000;
-            display: none; 
+            text-shadow: 2px 2px 2px #000; display: none; 
         }
-        .timer { color: #ffcc00; font-size: 1.2em; }
-        #dashCount { color: #00ffff; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="pantalla-inicio">
-        <h1>SOLO UN PUNTO</h1>
-        <div class="form-container">
-            <h3>Registro de Jugador</h3>
+        <h1 class="titulo-game">SOLO UN PUNTO</h1>
+
+        <div id="menu-opciones" class="form-container" style="display: block; border: none;">
+            <button onclick="mostrarSeccion('contenedor-login')">INICIAR SESIÓN</button>
+            <button onclick="mostrarSeccion('contenedor-registro')" class="secundario">REGISTRARSE</button>
+        </div>
+
+        <div id="contenedor-login" class="form-container">
+            <h3>Login</h3>
+            <input type="email" id="login-email" placeholder="Correo electrónico">
+            <input type="password" id="login-pass" placeholder="Contraseña">
+            <button onclick="login()">Entrar</button>
+            <button class="secundario" onclick="mostrarSeccion('menu-opciones')">Volver</button>
+            <p id="msg-login" class="mensaje"></p>
+        </div>
+
+        <div id="contenedor-registro" class="form-container">
+            <h3>Nuevo Guerrero</h3>
             <input type="text" id="reg-user" placeholder="Nombre de usuario">
             <input type="email" id="reg-email" placeholder="Correo electrónico">
             <input type="password" id="reg-pass" placeholder="Contraseña">
-            <button onclick="registrar()">Registrarse</button>
-            <p id="mensaje-servidor"></p>
+            <button onclick="registrar()">Crear Cuenta</button>
+            <button class="secundario" onclick="mostrarSeccion('menu-opciones')">Volver</button>
+            <p id="msg-reg" class="mensaje"></p>
         </div>
     </div>
 
     <div id="ui">
         <h2 id="status">BUSCA UN RECTÁNGULO</h2>
-        <div id="faseInfo">FASE: 1</div>
         <div id="timer" class="timer">Zona: 03:00</div>
-        <div id="dashCount"></div>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -95,48 +122,74 @@
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
 <script>
-// --- CONFIGURACIÓN DE RED ---
-// ¡IMPORTANTE! Reemplaza la URL de abajo por tu link azul de Render
+// --- CONFIGURACIÓN DE RED (RENDER) ---
 const socket = io("https://server-solo-un-punto.onrender.com"); 
 
-let juegoIniciado = false; 
+let juegoIniciado = false;
 
-// --- REGISTRO CON MONGODB ---
+// --- NAVEGACIÓN DE MENÚS ---
+function mostrarSeccion(id) {
+    document.querySelectorAll('.form-container').forEach(div => div.style.display = 'none');
+    document.getElementById(id).style.display = 'block';
+}
+
+// --- LÓGICA DE REGISTRO ---
 function registrar() {
     const user = document.getElementById('reg-user').value;
     const email = document.getElementById('reg-email').value;
     const pass = document.getElementById('reg-pass').value;
-    const mensaje = document.getElementById('mensaje-servidor');
+    const msg = document.getElementById('msg-reg');
 
     if(!user || !email || !pass) {
-        mensaje.innerText = "⚠️ Por favor llena todos los campos";
-        mensaje.style.color = "yellow";
+        msg.innerText = "⚠️ Completa todos los campos";
+        msg.style.color = "yellow";
         return;
     }
 
-    mensaje.innerText = "⏳ Conectando con el servidor...";
-    mensaje.style.color = "white";
-
-    // Enviamos los datos al servidor corregido
-    socket.emit('registrar_usuario', {
-        username: user,
-        email: email,
-        password: pass
-    });
+    socket.emit('registrar_usuario', { username: user, email: email, password: pass });
 }
 
-// Escuchamos la respuesta del servidor
 socket.on('registro_resultado', (data) => {
-    const mensaje = document.getElementById('mensaje-servidor');
+    const msg = document.getElementById('msg-reg');
     if (data.exito) {
-        alert("✅ " + data.mensaje);
+        alert("✅ Registro exitoso. Ahora inicia sesión.");
+        // Limpiar campos y volver al menú principal
+        document.getElementById('reg-user').value = "";
+        document.getElementById('reg-email').value = "";
+        document.getElementById('reg-pass').value = "";
+        mostrarSeccion('menu-opciones');
+    } else {
+        msg.innerText = "❌ " + data.mensaje;
+        msg.style.color = "red";
+    }
+});
+
+// --- LÓGICA DE LOGIN ---
+function login() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-pass').value;
+    const msg = document.getElementById('msg-login');
+
+    if(!email || !pass) {
+        msg.innerText = "⚠️ Ingresa tus credenciales";
+        msg.style.color = "yellow";
+        return;
+    }
+
+    // Emitimos evento de login (asegúrate que tu servidor en Render escuche 'login_usuario')
+    socket.emit('login_usuario', { email: email, password: pass });
+}
+
+socket.on('login_resultado', (data) => {
+    const msg = document.getElementById('msg-login');
+    if (data.exito) {
         document.getElementById('pantalla-inicio').style.display = 'none';
         document.getElementById('ui').style.display = 'block';
         juegoIniciado = true;
-        spawnPlayerSafely(); // Reiniciamos posición al entrar
+        spawnPlayerSafely();
     } else {
-        mensaje.innerText = "❌ " + data.mensaje;
-        mensaje.style.color = "red";
+        msg.innerText = "❌ " + data.mensaje;
+        msg.style.color = "red";
     }
 });
 
