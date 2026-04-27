@@ -32,14 +32,29 @@
     <div id="aviso-zona">¡FUERA DE LA ZONA!<br><span id="count-zona">5</span>s</div>
     <div id="dash-count">DASH: 0</div>
 
-    <div id="pantalla-inicio" class="pantalla">
-        <div class="form-container">
-            <h1 style="color:#0f0; margin-bottom:20px;">SOLO UN PUNTO</h1>
-            <input type="email" id="l-email" placeholder="Correo">
-            <input type="password" id="l-pass" placeholder="Contraseña">
-            <button onclick="login()">ENTRAR AL JUEGO</button>
-            <p id="txt-sala" style="margin-top:15px; font-size:0.9em; color:#888;">Conectando al servidor...</p>
-            <button id="btn-start" style="display:none; background:#0ff;" onclick="socket.emit('solicitar_inicio_partida')">¡EMPEZAR AHORA!</button>
+   <div id="pantalla-inicio" class="pantalla">
+        <div class="form-container" style="display: block;"> <h1 style="color:#0f0; margin-bottom:10px;">SOLO UN PUNTO</h1>
+            
+            <div style="margin-bottom: 15px;">
+                <button onclick="mostrarModo('login')" style="width:45%; display:inline-block; font-size:0.8em; background:#333;">LOGIN</button>
+                <button onclick="mostrarModo('registro')" style="width:45%; display:inline-block; font-size:0.8em; background:#333;">REGISTRO</button>
+            </div>
+
+            <div id="form-login">
+                <input type="email" id="l-email" placeholder="Correo">
+                <input type="password" id="l-pass" placeholder="Contraseña">
+                <button onclick="login()">ENTRAR</button>
+            </div>
+
+            <div id="form-registro" style="display:none;">
+                <input type="text" id="r-user" placeholder="Nombre de Usuario">
+                <input type="email" id="r-email" placeholder="Correo">
+                <input type="password" id="r-pass" placeholder="Contraseña">
+                <button onclick="registro()" style="background:#00ffff; color:#000;">CREAR CUENTA</button>
+            </div>
+
+            <p id="txt-sala" style="margin-top:15px; font-size:0.9em; color:#0f0;">Conectado al sistema</p>
+            <button id="btn-start" style="display:none; background:#ff00ff;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
         </div>
     </div>
 
