@@ -7,113 +7,54 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; }
         canvas { display: block; }
-
-        /* PANTALLA DE INICIO / LOGIN */
-        #pantalla-inicio {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: #000;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-family: Arial, sans-serif;
-        }
-        
-        .form-container {
-            background: #222;
-            padding: 20px;
-            border-radius: 10px;
-            border: 2px solid #00ff00;
-            width: 80%;
-            max-width: 320px;
-            text-align: center;
-            display: none; 
-        }
-
-        .titulo-game {
-            font-size: 3em;
-            color: #00ff00;
-            text-shadow: 0 0 15px #00ff00;
-            margin-bottom: 30px;
-        }
-
-        input {
-            width: 90%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: none;
-            background: #333;
-            color: white;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #00ff00;
-            border: none;
-            color: black;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-
+        #pantalla-inicio { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: Arial, sans-serif; }
+        .form-container { background: #222; padding: 20px; border-radius: 10px; border: 2px solid #00ff00; width: 80%; max-width: 320px; text-align: center; display: none; }
+        .titulo-game { font-size: 3em; color: #00ff00; text-shadow: 0 0 15px #00ff00; margin-bottom: 30px; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; background: #333; color: white; }
+        button { width: 100%; padding: 12px; background: #00ff00; border: none; color: black; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
         button.secundario { background: #444; color: white; margin-top: 15px; }
-        button:hover { opacity: 0.8; }
         .mensaje { font-size: 0.85em; margin-top: 10px; min-height: 1.2em; }
-        
-        /* UI DEL JUEGO */
-        #ui { 
-            position: absolute; top: 20px; left: 20px; color: white; 
-            font-family: 'Courier New', Courier, monospace; pointer-events: none; 
-            text-shadow: 2px 2px 2px #000; display: none; 
-        }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; font-family: sans-serif; pointer-events: none; text-shadow: 2px 2px 2px #000; display: none; }
+        .timer { color: #ffcc00; font-size: 1.2em; }
+        .dash-ui { color: #00ffff; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="pantalla-inicio">
         <h1 class="titulo-game">SOLO UN PUNTO</h1>
-
         <div id="menu-opciones" class="form-container" style="display: block; border: none;">
             <button onclick="mostrarSeccion('contenedor-login')">INICIAR SESIÓN</button>
             <button onclick="mostrarSeccion('contenedor-registro')" class="secundario">REGISTRARSE</button>
         </div>
-
         <div id="contenedor-login" class="form-container">
             <h3>Login</h3>
-            <input type="email" id="login-email" placeholder="Correo electrónico">
+            <input type="email" id="login-email" placeholder="Correo">
             <input type="password" id="login-pass" placeholder="Contraseña">
             <button onclick="login()">Entrar</button>
             <button class="secundario" onclick="mostrarSeccion('menu-opciones')">Volver</button>
             <p id="msg-login" class="mensaje"></p>
         </div>
-
         <div id="contenedor-registro" class="form-container">
-            <h3>Nuevo Guerrero</h3>
-            <input type="text" id="reg-user" placeholder="Nombre de usuario">
-            <input type="email" id="reg-email" placeholder="Correo electrónico">
+            <h3>Registro</h3>
+            <input type="text" id="reg-user" placeholder="Usuario">
+            <input type="email" id="reg-email" placeholder="Correo">
             <input type="password" id="reg-pass" placeholder="Contraseña">
             <button onclick="registrar()">Crear Cuenta</button>
             <button class="secundario" onclick="mostrarSeccion('menu-opciones')">Volver</button>
             <p id="msg-reg" class="mensaje"></p>
         </div>
-
         <div id="contenedor-espera" class="form-container">
             <h3 id="rol-usuario">SALA DE ESPERA</h3>
             <p style="font-size: 2.5em; color: #ffcc00;" id="contador-jugadores">1 / 100</p>
-            <p id="msg-espera" style="font-size: 0.8em; color: #888;">Esperando jugadores...</p>
             <button id="btn-iniciar-host" style="display: none; background: #ffcc00;" onclick="solicitarInicio()">INICIAR PARTIDA</button>
         </div>
     </div>
 
     <div id="ui">
         <h2 id="status">BUSCA UN RECTÁNGULO</h2>
+        <div class="dash-ui" id="dash-text">DASH: LISTO (1)</div>
+        <div id="item-status" style="color: #00ff00;">ARMADO: NO</div>
         <div id="timer" class="timer">Zona: 03:00</div>
     </div>
 
@@ -121,56 +62,40 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-const socket = io("https://server-solo-un-punto.onrender.com"); 
+const socket = io("https://server-solo-un-punto.onrender.com");
 let juegoIniciado = false;
 let players = {};
+let items = []; // Rectángulos y Dash items
+let walls = []; // Muros
 
+// --- UI Y NAVEGACIÓN ---
 function mostrarSeccion(id) {
     document.querySelectorAll('.form-container').forEach(div => div.style.display = 'none');
     document.getElementById(id).style.display = 'block';
 }
 
-// --- AUTENTICACIÓN ---
 function registrar() {
-    const user = document.getElementById('reg-user').value;
-    const email = document.getElementById('reg-email').value;
-    const pass = document.getElementById('reg-pass').value;
-    socket.emit('registrar_usuario', { username: user, email: email, password: pass });
+    socket.emit('registrar_usuario', { 
+        username: document.getElementById('reg-user').value, 
+        email: document.getElementById('reg-email').value, 
+        password: document.getElementById('reg-pass').value 
+    });
 }
 
-socket.on('registro_resultado', (data) => {
-    if (data.exito) {
-        alert("✅ Registro exitoso. Inicia sesión.");
-        mostrarSeccion('menu-opciones');
-    } else {
-        document.getElementById('msg-reg').innerText = "❌ " + data.mensaje;
-    }
-});
+socket.on('registro_resultado', d => { d.exito ? (alert("Exito"), mostrarSeccion('menu-opciones')) : alert(d.mensaje); });
 
 function login() {
-    const email = document.getElementById('login-email').value;
-    const pass = document.getElementById('login-pass').value;
-    socket.emit('login_usuario', { email: email, password: pass });
+    socket.emit('login_usuario', { 
+        email: document.getElementById('login-email').value, 
+        password: document.getElementById('login-pass').value 
+    });
 }
 
-socket.on('login_resultado', (data) => {
-    if (data.exito) {
-        mostrarSeccion('contenedor-espera');
-    } else {
-        document.getElementById('msg-login').innerText = "❌ " + data.mensaje;
-    }
-});
+socket.on('login_resultado', d => { d.exito ? mostrarSeccion('contenedor-espera') : alert(d.mensaje); });
 
-// --- LÓGICA DE SALA ---
-socket.on('actualizar_sala', (data) => {
-    document.getElementById('contador-jugadores').innerText = `${data.total} / 100`;
-    if (socket.id === data.hostId) {
-        document.getElementById('rol-usuario').innerText = "ERES EL ANFITRIÓN";
-        if (data.total >= 2) {
-            document.getElementById('btn-iniciar-host').style.display = 'block';
-            document.getElementById('msg-espera').innerText = "¡Puedes iniciar!";
-        }
-    }
+socket.on('actualizar_sala', d => {
+    document.getElementById('contador-jugadores').innerText = `${d.total} / 100`;
+    if(socket.id === d.hostId && d.total >= 2) document.getElementById('btn-iniciar-host').style.display = 'block';
 });
 
 function solicitarInicio() { socket.emit('solicitar_inicio_partida'); }
@@ -178,75 +103,131 @@ function solicitarInicio() { socket.emit('solicitar_inicio_partida'); }
 socket.on('iniciar_partida', () => {
     document.getElementById('pantalla-inicio').style.display = 'none';
     document.getElementById('ui').style.display = 'block';
+    generarMapa(); // Crear muros e ítems al iniciar
     juegoIniciado = true;
-    spawnPlayerSafely();
 });
 
 // --- MOTOR DEL JUEGO ---
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-window.addEventListener('resize', resize); resize();
-
-// Sincronización de otros jugadores
-socket.on('playerMoved', (data) => { players[data.id] = data; });
-socket.on('playerDisconnected', (id) => { delete players[id]; });
-socket.on('state', (serverPlayers) => { players = serverPlayers; });
-
 const WORLD_SIZE = 5000;
-const player = { x: 2500, y: 2500, radius: 12, speed: 5, angle: 0 };
-let targetPos = { x: player.x, y: player.y };
 
-canvas.addEventListener('mousedown', (e) => {
-    if(!juegoIniciado) return;
-    targetPos.x = player.x + (e.clientX - canvas.width/2) / 0.6;
-    targetPos.y = player.y + (e.clientY - canvas.height/2) / 0.6;
-});
+const player = {
+    x: 2500, y: 2500, radius: 12, speed: 5, angle: 0,
+    dashes: 1, lastDash: 0, hasWeapon: false,
+    isDashing: false, dashTime: 0, stretch: 1 
+};
 
-function update() {
-    if (!juegoIniciado) return;
-    let dx = targetPos.x - player.x;
-    let dy = targetPos.y - player.y;
-    let dist = Math.hypot(dx, dy);
-    if (dist > 5) {
-        player.x += (dx / dist) * player.speed;
-        player.y += (dy / dist) * player.speed;
-        player.angle = Math.atan2(dy, dx);
-        socket.emit('move', { x: player.x, y: player.y, angle: player.angle });
-    }
+let keys = {};
+window.onkeydown = e => keys[e.key] = true;
+window.onkeyup = e => keys[e.key] = false;
+
+function generarMapa() {
+    // Muros
+    for(let i=0; i<60; i++) walls.push({x: Math.random()*4500, y: Math.random()*4500, w: 200, h: 40});
+    // Ítems (Rojo = Arma, Azul = Dash)
+    for(let i=0; i<30; i++) items.push({x: Math.random()*4800, y: Math.random()*4800, type: 'weapon', color: 'red'});
+    for(let i=0; i<15; i++) items.push({x: Math.random()*4800, y: Math.random()*4800, type: 'dash', color: 'blue'});
 }
 
-function spawnPlayerSafely() {
-    player.x = Math.random() * 4000 + 500;
-    player.y = Math.random() * 4000 + 500;
-    targetPos = { x: player.x, y: player.y };
+function update() {
+    if(!juegoIniciado) return;
+
+    let mvX = 0, mvY = 0;
+    if(keys['ArrowUp'] || keys['w']) mvY = -1;
+    if(keys['ArrowDown'] || keys['s']) mvY = 1;
+    if(keys['ArrowLeft'] || keys['a']) mvX = -1;
+    if(keys['ArrowRight'] || keys['d']) mvX = 1;
+
+    // Lógica de Dash (Espacio)
+    if(keys[' '] && player.dashes > 0 && !player.isDashing) {
+        player.isDashing = true;
+        player.dashTime = 15; // Duración del impulso
+        player.dashes--;
+        if(player.dashes === 0) player.lastDash = Date.now();
+    }
+
+    // Recuperar Dash cada 6 segundos si no tiene cargas
+    if(player.dashes === 0 && Date.now() - player.lastDash > 6000) {
+        player.dashes = 1;
+    }
+
+    let currentSpeed = player.isDashing ? player.speed * 4 : player.speed;
+    if(player.isDashing) {
+        player.dashTime--;
+        if(player.dashTime <= 0) player.isDashing = false;
+    }
+
+    if(mvX !== 0 || mvY !== 0) {
+        player.angle = Math.atan2(mvY, mvX);
+        let nextX = player.x + mvX * currentSpeed;
+        let nextY = player.y + mvY * currentSpeed;
+        
+        // Colisión muros
+        let hit = walls.some(w => nextX > w.x && nextX < w.x+w.w && nextY > w.y && nextY < w.y+w.h);
+        if(!hit) { player.x = nextX; player.y = nextY; }
+        
+        // Animación óvalo
+        player.stretch = 1.4;
+    } else {
+        player.stretch = 1;
+    }
+
+    // Recoger ítems
+    items = items.filter(item => {
+        let d = Math.hypot(player.x - item.x, player.y - item.y);
+        if(d < 30) {
+            if(item.type === 'weapon') player.hasWeapon = true;
+            if(item.type === 'dash') player.dashes = Math.min(5, player.dashes + 5);
+            return false;
+        }
+        return true;
+    });
+
+    socket.emit('move', { x: player.x, y: player.y, angle: player.angle, hasWeapon: player.hasWeapon });
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById('dash-text').innerText = `DASH: ${player.dashes > 0 ? 'LISTO' : 'CARGANDO'} (${player.dashes})`;
+    document.getElementById('item-status').innerText = `ARMADO: ${player.hasWeapon ? 'SÍ' : 'NO'}`;
 }
 
 function draw() {
     update();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (!juegoIniciado) { requestAnimationFrame(draw); return; }
+    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
 
     ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.scale(0.6, 0.6);
+    ctx.translate(canvas.width/2, canvas.height/2);
+    ctx.scale(0.8, 0.8);
     ctx.translate(-player.x, -player.y);
 
-    // Otros
-    for (let id in players) {
-        if (id !== socket.id) {
-            ctx.fillStyle = "red";
-            ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 12, 0, Math.PI*2); ctx.fill();
+    // Muros e Ítems
+    ctx.fillStyle = "#444";
+    walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+    items.forEach(it => {
+        ctx.fillStyle = it.color;
+        it.type === 'weapon' ? ctx.fillRect(it.x, it.y, 25, 15) : ctx.fillRect(it.x, it.y, 10, 10);
+    });
+
+    // Otros Jugadores
+    for(let id in players) {
+        if(id !== socket.id) {
+            let p = players[id];
+            ctx.fillStyle = p.hasWeapon ? "orange" : "red";
+            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, 7); ctx.fill();
         }
     }
 
-    // Yo
+    // Mi Jugador (Animación óvalo)
     ctx.save();
     ctx.translate(player.x, player.y);
     ctx.rotate(player.angle);
-    ctx.fillStyle = "#00ff00";
-    ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle = "white"; ctx.fillRect(8, -2, 6, 4);
+    ctx.fillStyle = player.hasWeapon ? "#00ffff" : "#00ff00";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12 * player.stretch, 12 / (player.stretch * 0.8), 0, 0, Math.PI*2);
+    ctx.fill();
     ctx.restore();
 
     ctx.restore();
