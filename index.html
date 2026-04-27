@@ -63,10 +63,21 @@ let items = [];
 let walls = [];
 const WORLD_SIZE = 5000;
 
-// Lógica de Zona (Battle Royale)
-let zona = { x: 2500, y: 2500, radio: 2500, targetRadio: 2500 };
-let fueraDeZonaTimer = 5;
-let ultimaActualizacionZona = Date.now();
+// Variables de la Zona Battle Royale
+let zona = { x: 2500, y: 2500, radio: 2500 };
+let fueraDeZonaTimer = null;
+let segundosParaMorir = 5;
+
+// Variables del Jugador y Mecánicas
+const player = {
+    x: 2500, y: 2500, r: 12, speed: 5, angle: 0,
+    dashes: 1, lastDash: 0, hasWeapon: false,
+    isDashing: false, stretch: 1, vivo: true
+};
+
+let keys = {};
+window.onkeydown = e => keys[e.key] = true;
+window.onkeyup = e => keys[e.key] = false;
 
 // --- NAVEGACIÓN Y LOGIN ---
 function mostrarSeccion(id) {
@@ -74,42 +85,64 @@ function mostrarSeccion(id) {
     document.getElementById(id).style.display = 'block';
 }
 
-function registrar() { socket.emit('registrar_usuario', { username: document.getElementById('reg-user').value, email: document.getElementById('reg-email').value, password: document.getElementById('reg-pass').value }); }
-function login() { socket.emit('login_usuario', { email: document.getElementById('login-email').value, password: document.getElementById('login-pass').value }); }
+function registrar() { 
+    socket.emit('registrar_usuario', { 
+        username: document.getElementById('reg-user').value, 
+        email: document.getElementById('reg-email').value, 
+        password: document.getElementById('reg-pass').value 
+    }); 
+}
 
-socket.on('registro_resultado', d => { if(d.exito) mostrarSeccion('menu-opciones'); else alert(d.mensaje); });
-socket.on('login_resultado', d => { if(d.exito) mostrarSeccion('contenedor-espera'); else alert(d.mensaje); });
+function login() { 
+    socket.emit('login_usuario', { 
+        email: document.getElementById('login-email').value, 
+        password: document.getElementById('login-pass').value 
+    }); 
+}
+
+socket.on('registro_resultado', d => { if(d.exito) { alert("¡Registro exitoso!"); mostrarSeccion('menu-opciones'); } else alert(d.mensaje); });
+
+socket.on('login_resultado', d => { 
+    if(d.exito) {
+        mostrarSeccion('contenedor-espera');
+    } else alert(d.mensaje); 
+});
+
 socket.on('actualizar_sala', d => {
     document.getElementById('contador-jugadores').innerText = `${d.total} / 100`;
-    if(socket.id === d.hostId && d.total >= 2) document.getElementById('btn-iniciar-host').style.display = 'block';
+    if(socket.id === d.hostId && d.total >= 2) {
+        document.getElementById('btn-iniciar-host').style.display = 'block';
+    }
 });
 
 function solicitarInicio() { socket.emit('solicitar_inicio_partida'); }
 
-socket.on('iniciar_partida', () => {
+socket.on('iniciar_partida', (data) => {
     document.getElementById('pantalla-inicio').style.display = 'none';
     document.getElementById('ui-overlay').style.display = 'block';
-    generarMapa();
+    // Recibir mapa e items del servidor para que todos vean lo mismo
+    items = data.items || [];
+    zona = data.zona || { x: 2500, y: 2500, radio: 2500 };
+    generarMurosFijos();
     juegoIniciado = true;
 });
 
-// --- MOTOR DEL JUEGO ---
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const player = { x: 2500, y: 2500, r: 12, speed: 5, angle: 0, dashes: 1, lastDash: 0, hasWeapon: false, isDashing: false, dashCooldown: 6000, stretch: 1 };
-let keys = {};
-window.onkeydown = e => keys[e.key] = true;
-window.onkeyup = e => keys[e.key] = false;
-
-function generarMapa() {
-    walls = []; items = [];
-    for(let i=0; i<80; i++) walls.push({x: Math.random()*4500, y: Math.random()*4500, w: 200, h: 40});
-    for(let i=0; i<40; i++) items.push({x: Math.random()*4800, y: Math.random()*4800, type: 'weapon', color: 'red'});
-    for(let i=0; i<20; i++) items.push({x: Math.random()*4800, y: Math.random()*4800, type: 'dash', color: 'blue'});
+// --- LÓGICA DEL JUEGO ---
+function generarMurosFijos() {
+    walls = [];
+    // Muros perimetrales
+    walls.push({x: 0, y: 0, w: WORLD_SIZE, h: 20});
+    walls.push({x: 0, y: WORLD_SIZE-20, w: WORLD_SIZE, h: 20});
+    walls.push({x: 0, y: 0, w: 20, h: WORLD_SIZE});
+    walls.push({x: WORLD_SIZE-20, y: 0, w: 20, h: WORLD_SIZE});
+    // Algunos muros internos aleatorios (mismos para todos)
+    for(let i=0; i<40; i++) {
+        walls.push({x: (i * 12345) % 4500, y: (i * 67890) % 4500, w: 150, h: 30});
+    }
 }
 
 function update() {
-    if(!juegoIniciado) return;
+    if(!juegoIniciado || !player.vivo) return;
 
     let mx = 0, my = 0;
     if(keys['ArrowUp'] || keys['w']) my = -1;
@@ -117,44 +150,84 @@ function update() {
     if(keys['ArrowLeft'] || keys['a']) mx = -1;
     if(keys['ArrowRight'] || keys['d']) mx = 1;
 
-    // Dash
+    // Lógica del Dash (Acumulable hasta 5)
     if(keys[' '] && player.dashes > 0 && !player.isDashing) {
         player.isDashing = true;
         player.dashes--;
         player.lastDash = Date.now();
         setTimeout(() => player.isDashing = false, 200);
     }
-    if(player.dashes === 0 && Date.now() - player.lastDash > player.dashCooldown) player.dashes = 1;
+    // Recarga normal de 1 Dash cada 6 seg si está en 0
+    if(player.dashes === 0 && Date.now() - player.lastDash > 6000) {
+        player.dashes = 1;
+    }
 
     let speed = player.isDashing ? player.speed * 4 : player.speed;
+
     if(mx !== 0 || my !== 0) {
         player.angle = Math.atan2(my, mx);
         let nx = player.x + mx * speed;
         let ny = player.y + my * speed;
-        let col = walls.some(w => nx > w.x && nx < w.x+w.w && ny > w.y && ny < w.y+w.h);
-        if(!col) { player.x = nx; player.y = ny; }
-        player.stretch = 1.5;
-    } else { player.stretch = 1; }
+        
+        // Colisión con muros
+        let hit = walls.some(w => nx > w.x && nx < w.x+w.w && ny > w.y && ny < w.y+w.h);
+        if(!hit) { player.x = nx; player.y = ny; }
+        
+        player.stretch = 1.4; // Efecto óvalo
+    } else {
+        player.stretch = 1;
+    }
 
-    // Items
+    // Recoger Items (Sincronizado)
     items = items.filter(it => {
-        if(Math.hypot(player.x - it.x, player.y - it.y) < 30) {
+        let dist = Math.hypot(player.x - it.x, player.y - it.y);
+        if(dist < 30) {
             if(it.type === 'weapon') player.hasWeapon = true;
-            if(it.type === 'dash') player.dashes = 5;
+            if(it.type === 'dash') player.dashes = Math.min(5, player.dashes + 5);
             return false;
         }
         return true;
     });
 
-    // Zona Battle Royale
+    // Lógica de Zona
     let distZona = Math.hypot(player.x - zona.x, player.y - zona.y);
     if(distZona > zona.radio) {
         document.getElementById('alerta-zona').style.display = 'block';
-        // Aquí iría el contador de 5s para morir
-    } else { document.getElementById('alerta-zona').style.display = 'none'; }
+        if(!fueraDeZonaTimer) {
+            segundosParaMorir = 5;
+            fueraDeZonaTimer = setInterval(() => {
+                segundosParaMorir--;
+                document.getElementById('timer-muerte').innerText = segundosParaMorir + "s";
+                if(segundosParaMorir <= 0) {
+                    player.vivo = false;
+                    clearInterval(fueraDeZonaTimer);
+                    alert("Eliminado por la zona");
+                    location.reload();
+                }
+            }, 1000);
+        }
+    } else {
+        document.getElementById('alerta-zona').style.display = 'none';
+        clearInterval(fueraDeZonaTimer);
+        fueraDeZonaTimer = null;
+    }
 
-    socket.emit('move', { x: player.x, y: player.y, angle: player.angle, hasWeapon: player.hasWeapon, stretch: player.stretch });
+    // Enviar a servidor
+    socket.emit('move', { 
+        x: player.x, y: player.y, angle: player.angle, 
+        stretch: player.stretch, hasWeapon: player.hasWeapon 
+    });
 }
+
+// Escuchar actualizaciones de otros
+socket.on('playerMoved', d => { players[d.id] = d; });
+socket.on('playerDisconnected', id => { delete players[id]; });
+socket.on('actualizar_zona', nuevaZona => { zona = nuevaZona; });
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+window.addEventListener('resize', resize); resize();
 
 function draw() {
     update();
@@ -163,35 +236,51 @@ function draw() {
 
     ctx.save();
     ctx.translate(canvas.width/2, canvas.height/2);
-    ctx.scale(0.7, 0.7);
+    ctx.scale(0.7, 0.7); // Zoom para ver más mapa
     ctx.translate(-player.x, -player.y);
 
-    // Dibujar Zona
-    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
+    // Dibujar Zona Roja
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+    ctx.lineWidth = 20;
     ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
 
-    walls.forEach(w => { ctx.fillStyle = "#444"; ctx.fillRect(w.x, w.y, w.w, w.h); });
-    items.forEach(it => { ctx.fillStyle = it.color; ctx.fillRect(it.x, it.y, 20, 20); });
+    // Dibujar Muros e Items
+    ctx.fillStyle = "#444";
+    walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+    items.forEach(it => {
+        ctx.fillStyle = it.type === 'weapon' ? 'red' : 'blue';
+        ctx.fillRect(it.x, it.y, 20, 20);
+    });
 
+    // Otros Jugadores
     for(let id in players) {
         if(id !== socket.id) {
             let p = players[id];
             ctx.save();
             ctx.translate(p.x, p.y); ctx.rotate(p.angle);
             ctx.fillStyle = "red";
-            ctx.beginPath(); ctx.ellipse(0, 0, 12*(p.stretch||1), 12, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); 
+            ctx.ellipse(0, 0, 12*(p.stretch || 1), 10, 0, 0, Math.PI*2); 
+            ctx.fill();
             ctx.restore();
         }
     }
 
-    // Mi Punto
+    // Mi Punto (Con Animación Óvalo)
     ctx.save();
     ctx.translate(player.x, player.y); ctx.rotate(player.angle);
     ctx.fillStyle = player.hasWeapon ? "#00ffff" : "#00ff00";
-    ctx.beginPath(); ctx.ellipse(0, 0, 12*player.stretch, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12 * player.stretch, 10, 0, 0, Math.PI*2);
+    ctx.fill();
     ctx.restore();
 
     ctx.restore();
+    
+    // Actualizar UI básica
+    document.getElementById('dash-ui').innerText = `DASH: ${player.dashes}`;
+    document.getElementById('arma-ui').innerText = `ARMA: ${player.hasWeapon ? 'SÍ' : 'NO'}`;
+    
     requestAnimationFrame(draw);
 }
 draw();
