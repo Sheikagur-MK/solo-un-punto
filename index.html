@@ -3,60 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Solo un Punto - Battle Royale</title>
+    <title>Solo un Punto</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #111; touch-action: none; font-family: sans-serif; }
-        canvas { display: block; background: #000; margin: auto; }
-        
-        /* UI DE INICIO (MANTENIDA) */
-        #pantalla-inicio, #pantalla-fin { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
+        #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
+        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; }
+        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: #0ff; border-radius: 50%; pointer-events: auto; border: none; font-weight: bold; }
+        #aviso-zona { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); color: red; font-size: 2em; font-weight: bold; display: none; z-index: 20; text-shadow: 2px 2px #000; }
+        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
         .form-container { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; }
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 5px; border: 1px solid #333; background: #222; color: white; }
         button { width: 100%; padding: 12px; background: #00ff00; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
-
-        /* CONTROLES ANDROID */
-        #ui-android { position: absolute; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; }
-        #joystick-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; }
-        #joystick-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00ff00; border-radius: 50%; pointer-events: none; }
-        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 80px; height: 80px; background: #00ffff; border-radius: 50%; pointer-events: auto; border: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="pantalla-inicio">
-        <div id="menu-inicial" class="form-container" style="display:block">
-            <h1 style="color:#00ff00">SOLO UN PUNTO</h1>
-            <button onclick="mostrar('contenedor-login')">INICIAR SESIÓN</button>
-            <button onclick="mostrar('contenedor-registro')" style="background:#333; color:white">REGISTRARSE</button>
-        </div>
-        <div id="contenedor-login" class="form-container" style="display:none">
-            <input type="email" id="l-email" placeholder="Correo">
-            <input type="password" id="l-pass" placeholder="Contraseña">
+    <div id="aviso-zona">¡REGRESA A LA ZONA! <span id="timer-zona">5</span>s</div>
+
+    <div id="pantalla-inicio" class="pantalla">
+        <div class="form-container">
+            <h1 style="color:#0f0">SOLO UN PUNTO</h1>
+            <input type="email" id="l-email" placeholder="Correo" style="width:90%; padding:10px; margin:5px;">
+            <input type="password" id="l-pass" placeholder="Contraseña" style="width:90%; padding:10px; margin:5px;">
             <button onclick="login()">ENTRAR</button>
-        </div>
-        <div id="contenedor-registro" class="form-container" style="display:none">
-            <input type="text" id="r-user" placeholder="Usuario">
-            <input type="email" id="r-email" placeholder="Correo">
-            <input type="password" id="r-pass" placeholder="Contraseña">
-            <button onclick="registro()">CREAR CUENTA</button>
-        </div>
-        <div id="contenedor-espera" class="form-container" style="display:none">
-            <p id="txt-sala">Esperando jugadores...</p>
+            <p id="txt-sala">Cargando...</p>
             <button id="btn-start" style="display:none" onclick="socket.emit('solicitar_inicio_partida')">INICIAR</button>
         </div>
     </div>
 
-    <div id="pantalla-fin" style="display:none">
-        <div class="form-container">
-            <h1 id="txt-resultado"></h1>
-            <h2 id="txt-lugar"></h2>
-            <button onclick="location.reload()">NUEVA PARTIDA</button>
-            <button onclick="window.close()" style="background:#444">SALIR</button>
-        </div>
-    </div>
-
     <div id="ui-android">
-        <div id="joystick-base"><div id="joystick-stick"></div></div>
+        <div id="joy-base"><div id="joy-stick"></div></div>
         <button id="btn-dash">DASH</button>
     </div>
 
@@ -68,106 +44,102 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, speed: 6, angle: 0, stretch: 1, animT: 0, vivo: true, hasWeapon: false };
-let players = {}, items = [], particles = [], juegoIniciado = false;
-let joyX = 0, joyY = 0;
+let player = { x: 2500, y: 2500, speed: 6, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false };
+let players = {}, items = [], walls = [], particles = [], zona = { x:2500, y:2500, radio:2500 };
+let juegoIniciado = false, joyX = 0, joyY = 0, teclas = {};
+let tiempoFuera = 0, fueraInterval = null;
 
 if(/Android|iPhone/i.test(navigator.userAgent)) document.getElementById('ui-android').style.display = 'block';
 
-// --- FUNCIONES DE UI (TU LÓGICA) ---
-function mostrar(id) {
-    document.getElementById('menu-inicial').style.display = 'none';
-    document.getElementById('contenedor-login').style.display = 'none';
-    document.getElementById('contenedor-registro').style.display = 'none';
-    document.getElementById(id).style.display = 'block';
-}
-function login() { socket.emit('login_usuario', { email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value }); }
-function registro() { socket.emit('registrar_usuario', { username: document.getElementById('r-user').value, email: document.getElementById('r-email').value, password: document.getElementById('r-pass').value }); }
+// CONTROLES PC
+window.onkeydown = e => teclas[e.code] = true;
+window.onkeyup = e => teclas[e.code] = false;
 
-socket.on('login_resultado', d => { if(d.exito) mostrar('contenedor-espera'); });
+function login() { socket.emit('login_usuario', { email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value }); }
+socket.on('login_resultado', d => { if(d.exito) document.getElementById('txt-sala').innerText = "Conectado. Esperando..."; });
 socket.on('actualizar_sala', d => {
     document.getElementById('txt-sala').innerText = `Jugadores: ${d.total}`;
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
 socket.on('iniciar_partida', d => {
-    items = d.items; juegoIniciado = true;
+    items = d.items; zona = d.zona; walls = d.walls;
+    juegoIniciado = true;
     document.getElementById('pantalla-inicio').style.display = 'none';
 });
 
-// --- MECÁNICA DE ELIMINACIÓN Y PARTÍCULAS ---
-socket.on('has_muerto', pos => {
-    crearExplosion(player.x, player.y);
-    player.vivo = false;
-    setTimeout(() => {
-        document.getElementById('txt-resultado').innerText = "ELIMINADO";
-        document.getElementById('txt-lugar').innerText = `Lugar: #${pos}`;
-        document.getElementById('pantalla-fin').style.display = 'flex';
-    }, 1000);
-});
+socket.on('actualizar_zona', d => { zona = d.zona; });
 
-socket.on('eres_ganador', () => {
-    document.getElementById('txt-resultado').innerText = "¡ERES EL GANADOR!";
-    document.getElementById('txt-lugar').innerText = "Lugar: #1";
-    document.getElementById('pantalla-fin').style.display = 'flex';
-});
+// LÓGICA DE MOVIMIENTO HÍBRIDA
+function handleInput() {
+    let dx = 0, dy = 0;
+    // Teclado
+    if(teclas['ArrowUp']) dy = -1; if(teclas['ArrowDown']) dy = 1;
+    if(teclas['ArrowLeft']) dx = -1; if(teclas['ArrowRight']) dx = 1;
+    if(teclas['Space']) { player.speed = 15; setTimeout(()=>player.speed=6, 200); }
+    
+    // Joystick
+    if(joyX !== 0 || joyY !== 0) { dx = joyX; dy = joyY; }
 
-function crearExplosion(x, y) {
-    for(let i=0; i<20; i++) {
-        particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10, life: 1.0 });
+    if(dx !== 0 || dy !== 0) {
+        player.x += dx * player.speed; player.y += dy * player.speed;
+        player.angle = Math.atan2(dy, dx);
+        player.anim += 0.2;
+        player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.4;
+    } else { player.stretch = 1; }
+
+    // Verificar Zona
+    const distZona = Math.hypot(player.x - zona.x, player.y - zona.y);
+    if(distZona > zona.radio && player.vivo) {
+        if(!fueraInterval) {
+            tiempoFuera = 5;
+            document.getElementById('aviso-zona').style.display = 'block';
+            fueraInterval = setInterval(() => {
+                tiempoFuera--;
+                document.getElementById('timer-zona').innerText = tiempoFuera;
+                if(tiempoFuera <= 0) {
+                    socket.emit('eliminar_jugador', socket.id);
+                    clearInterval(fueraInterval);
+                }
+            }, 1000);
+        }
+    } else {
+        clearInterval(fueraInterval); fueraInterval = null;
+        document.getElementById('aviso-zona').style.display = 'none';
     }
 }
 
-// --- JOYSTICK LOGIC ---
-const joyBase = document.getElementById('joystick-base');
-const joyStick = document.getElementById('joystick-stick');
-joyBase.ontouchmove = e => {
-    const t = e.touches[0], r = joyBase.getBoundingClientRect();
+// JOYSTICK TÁCTIL
+const jBase = document.getElementById('joy-base');
+const jStick = document.getElementById('joy-stick');
+jBase.ontouchmove = e => {
+    const t = e.touches[0], r = jBase.getBoundingClientRect();
     let dx = t.clientX - (r.left + 60), dy = t.clientY - (r.top + 60);
-    const d = Math.hypot(dx, dy); if(d > 40) { dx *= 40/d; dy *= 40/d; }
-    joyStick.style.transform = `translate(${dx}px, ${dy}px)`;
-    joyX = dx/40; joyY = dy/40;
+    const d = Math.hypot(dx, dy); if(d > 45) { dx *= 45/d; dy *= 45/d; }
+    jStick.style.transform = `translate(${dx}px, ${dy}px)`;
+    joyX = dx/45; joyY = dy/45;
 };
-joyBase.ontouchend = () => { joyStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
-document.getElementById('btn-dash').ontouchstart = () => { player.speed = 15; setTimeout(()=>player.speed=6, 200); };
+jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
+document.getElementById('btn-dash').ontouchstart = () => { player.speed = 18; setTimeout(()=>player.speed=6, 200); };
 
-// --- BUCLE DE JUEGO ---
 function draw() {
-    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
-    
-    // Movimiento y Animación Óvalo
-    if(joyX !== 0 || joyY !== 0) {
-        player.x += joyX * player.speed; player.y += joyY * player.speed;
-        player.angle = Math.atan2(joyY, joyX);
-        player.animT += 0.15;
-        player.stretch = 1 + Math.abs(Math.sin(player.animT)) * 0.4;
-    } else { player.stretch = 1; }
-
-    // Colisión con items (rectángulos)
-    items.forEach(it => {
-        if(!player.hasWeapon && Math.hypot(player.x - it.x, player.y - it.y) < 30) {
-            player.hasWeapon = true;
-            socket.emit('item_recogido', it.id);
-        }
-    });
-
-    // Colisión con otros jugadores (si tienes arma)
-    for(let id in players) {
-        if(player.hasWeapon && Math.hypot(player.x - players[id].x, player.y - players[id].y) < 35) {
-            socket.emit('eliminar_jugador', id);
-            player.hasWeapon = false; // Pierde el rectángulo tras eliminar
-        }
-    }
-
-    socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
-
-    // RENDER
+    if(juegoIniciado) handleInput();
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     ctx.clearRect(0,0, canvas.width, canvas.height);
+    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
+
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
 
-    // Dibujar Items (Rectángulos)
+    // Dibujar Zona
+    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
+
+    // Dibujar Muros
+    ctx.fillStyle = "#333";
+    walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+    // Dibujar Items
     ctx.fillStyle = "red";
     items.forEach(it => ctx.fillRect(it.x, it.y, 20, 20));
 
@@ -176,27 +148,18 @@ function draw() {
         let p = players[id];
         ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
         ctx.fillStyle = "#555";
-        ctx.beginPath(); ctx.ellipse(0, 0, 15*p.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-        if(p.hasWeapon) { ctx.fillStyle="red"; ctx.fillRect(15, -5, 20, 10); }
+        ctx.beginPath(); ctx.ellipse(0, 0, 15*(p.stretch||1), 13, 0, 0, Math.PI*2); ctx.fill();
         ctx.restore();
     }
 
     // Mi Jugador
     if(player.vivo) {
         ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-        ctx.fillStyle = "#00ff00";
+        ctx.fillStyle = "#0f0";
         ctx.beginPath(); ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-        if(player.hasWeapon) { ctx.fillStyle="red"; ctx.fillRect(15, -5, 20, 10); }
         ctx.restore();
+        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch });
     }
-
-    // Partículas
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
-        ctx.fillRect(p.x, p.y, 4, 4);
-        if(p.life <= 0) particles.splice(i, 1);
-    });
 
     ctx.restore();
     requestAnimationFrame(draw);
@@ -204,9 +167,8 @@ function draw() {
 draw();
 socket.on('playerMoved', d => players[d.id] = d);
 socket.on('playerDisconnected', id => delete players[id]);
-socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
+socket.on('has_muerto', () => { player.vivo = false; location.reload(); });
 </script>
 </body>
 </html>
-
 
