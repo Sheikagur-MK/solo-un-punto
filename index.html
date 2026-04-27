@@ -108,49 +108,36 @@ function activarDash() {
 window.onkeydown = e => { keys[e.key] = true; if(e.key === ' ') activarDash(); };
 window.onkeyup = e => keys[e.key] = false;
 
-// ... dentro de la función update() de tu index.html ...
-
 function update() {
     if(!juegoIniciado || !player.vivo) return;
     
     let mx = joyX, my = joyY;
-    if(keys['w']) my = -1; if(keys['s']) my = 1; if(keys['a']) mx = -1; if(keys['d']) mx = 1;
+    if(keys['w'] || keys['ArrowUp']) my = -1;
+    if(keys['s'] || keys['ArrowDown']) my = 1;
+    if(keys['a'] || keys['ArrowLeft']) mx = -1;
+    if(keys['d'] || keys['ArrowRight']) mx = 1;
 
     if(mx !== 0 || my !== 0) {
-        let nextX = player.x + mx * player.speed;
-        let nextY = player.y + my * player.speed;
+        player.x += mx * player.speed; player.y += my * player.speed;
+        player.angle = Math.atan2(my, mx); player.stretch = 1.4;
+    } else { player.stretch = 1; }
 
-        // COLISIÓN CON MUROS
-        let choca = false;
-        walls.forEach(w => {
-            if(nextX > w.x && nextX < w.x + w.w && nextY > w.y && nextY < w.y + w.h) choca = true;
-        });
+    if(player.dashes === 0 && Date.now() - player.lastDash > 6000) player.dashes = 1;
 
-        if(!choca) {
-            player.x = nextX;
-            player.y = nextY;
+    items.forEach(it => {
+        if(Math.hypot(player.x - it.x, player.y - it.y) < 30) {
+            if(it.type === 'weapon') player.hasWeapon = true;
+            if(it.type === 'dash') player.dashes = 5;
+            socket.emit('item_recogido', it.id);
         }
+    });
 
-        player.angle = Math.atan2(my, mx);
-        
-        // ANIMACIÓN ÓVALO (Caminar)
-        player.animStep += 0.2;
-        player.stretch = 1 + Math.sin(player.animStep) * 0.3; // Se estira y encoge
-    } else {
-        player.stretch = 1;
+    for(let id in players) {
+        if(player.hasWeapon && Math.hypot(player.x - players[id].x, player.y - players[id].y) < 40) {
+            socket.emit('eliminar_jugador', id);
+        }
     }
-
-    // Lógica de Zona y Eliminación (5 segundos fuera)
-    const dZona = Math.hypot(player.x - zona.x, player.y - zona.y);
-    if(dZona > zona.radio) {
-        outTimer -= 0.016; 
-        if(outTimer <= 0) socket.emit('eliminar_jugador', socket.id);
-    } else {
-        outTimer = 5;
-    }
-
     socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
-}
 }
 
 socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
@@ -205,3 +192,4 @@ draw();
 </script>
 </body>
 </html>
+
