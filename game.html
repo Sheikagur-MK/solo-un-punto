@@ -29,6 +29,48 @@
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 15px #0f0; }
         #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 85px; height: 85px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 20px #0ff; }
     </style>
+    <style>
+  .btn-animado {
+    position: relative;
+    width: 45%;
+    display: inline-block;
+    font-size: 0.8em;
+    background: #0f0;
+    color: black;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    overflow: hidden; /* Para que el punto no se salga del botón */
+  }
+
+  /* El "puntito" que corre por el borde */
+  .btn-animado::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: white; /* Color del puntito */
+    border-radius: 50%;
+    top: -10px; /* Escondido al inicio */
+    left: -10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  /* Animación al poner el mouse (hover) */
+  .btn-animado:hover::before {
+    opacity: 1;
+    animation: correrContorno 1.5s linear infinite;
+  }
+
+  @keyframes correrContorno {
+    0%   { top: 0; left: 0; }
+    25%  { top: 0; left: 100%; transform: translateX(-100%); }
+    50%  { top: 100%; left: 100%; transform: translate(-100%, -100%); }
+    75%  { top: 100%; left: 0; transform: translateY(-100%); }
+    100% { top: 0; left: 0; }
+  }
+</style>
 </head>
 <body>
     
