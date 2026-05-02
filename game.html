@@ -353,14 +353,91 @@ socket.on('eres_ganador', () => {
     document.getElementById('subtexto-final').innerText = "Has derrotado a todos. ¡Felicidades!";
 });
 
+// --- NUEVAS VARIABLES DE EFECTOS ---
+let particles = [];
+let trails = {}; // Almacena las estelas de cada jugador
+
+function createExplosion(x, y) {
+    for(let i=0; i<15; i++) {
+        particles.push({
+            x, y, 
+            vx: (Math.random()-0.5)*10, 
+            vy: (Math.random()-0.5)*10, 
+            life: 1.0, 
+            color: '#0f0'
+        });
+    }
+}
+
+// --- ACTUALIZACIÓN DE LA FUNCIÓN DRAW ---
 function draw() {
     if(juegoIniciado) handleInput();
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    ctx.clearRect(0,0, canvas.width, canvas.height);
+    ctx.fillStyle = '#050505'; // Fondo casi negro para que resalte el neón
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    
     if(!juegoIniciado) { requestAnimationFrame(draw); return; }
 
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+
+    // DIBUJAR ESTELAS (TRAILS)
+    for(let id in trails) {
+        ctx.beginPath();
+        ctx.lineWidth = 10;
+        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.1)';
+        trails[id].forEach((p, i) => {
+            ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+        if(trails[id].length > 10) trails[id].shift(); // Limitar largo de estela
+    }
+
+    // DIBUJAR PARTICULAS
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
+        ctx.fillRect(p.x, p.y, 4, 4);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    // MI JUGADOR CON GLOW (RESPLANDOR)
+    if(player.vivo) {
+        ctx.save();
+        ctx.translate(player.x, player.y);
+        ctx.rotate(player.angle);
+        
+        // Sombra de neón
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = player.hasWeapon ? "#ff0000" : "#0f0";
+        
+        ctx.fillStyle = player.hasWeapon ? "#ff0000" : "#0f0";
+        ctx.beginPath(); 
+        ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); 
+        ctx.fill();
+
+        if(player.hasWeapon) {
+            // Arma estilo Sable Láser
+            ctx.fillStyle = "#fff"; // Centro blanco
+            ctx.fillRect(12, -4, 25, 8);
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(12, -4, 25, 8);
+        }
+        ctx.restore();
+        
+        // Actualizar mi estela local
+        if(!trails[socket.id]) trails[socket.id] = [];
+        trails[socket.id].push({x: player.x, y: player.y});
+    }
+
+    // ... (resto del dibujo de zona y muros con ctx.shadowBlur para el toque Next Gen)
+    ctx.restore();
+    requestAnimationFrame(draw);
+}
+
+// Escuchar explosiones del server
+socket.on('efecto_explosion', d => createExplosion(d.x, d.y));
 
     // 1. Muros
     ctx.fillStyle = "#333"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
