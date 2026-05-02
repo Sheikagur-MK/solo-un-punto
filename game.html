@@ -15,13 +15,22 @@
 
         /* PANTALLAS */
         .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
+        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
         
         input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
         input:focus { box-shadow: 0 0 15px #0f0; }
         
         button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
         button:hover { background: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.02); }
+
+        /* MENÚ DE PERSONAJES */
+        #menu-personaje { display: none; flex-direction: row; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 85px; font-size: 0.7em; }
+        .card-pj:hover { border-color: #0f0; transform: translateY(-5px); }
+        .card-pj.selected { border-color: #0f0; background: #030; box-shadow: 0 0 15px #0f0; }
+        .preview { width: 30px; height: 30px; margin: 0 auto 10px; border: 2px solid #fff; }
+        .circ { border-radius: 50%; }
+        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; border-top: 0; background: none; border-top: none; }
 
         /* PANTALLA FINAL */
         #pantalla-fin { display: none; background: rgba(0,0,0,0.95); z-index: 10000; }
@@ -33,10 +42,6 @@
         #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
         #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 20px #0f0; }
         #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #0ff; color: #000; }
-
-        /* ANIMACIÓN MODAL */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
-        .modal-content { background: #000; border: 2px solid #0f0; padding: 40px; text-align: center; box-shadow: 0 0 30px #0f0; color: #0f0; border-radius: 15px; }
     </style>
 </head>
 <body>
@@ -48,7 +53,8 @@
     <div id="pantalla-inicio" class="pantalla">
         <div class="form-container"> 
             <h1 style="color:#0f0; margin-bottom:10px; text-shadow: 0 0 15px #0f0;">SOLO UN PUNTO</h1>
-            <div style="display:flex; gap:10px; margin-bottom: 15px;">
+            
+            <div id="auth-buttons" style="display:flex; gap:10px; margin-bottom: 15px;">
                <button onclick="mostrarModo('login')" style="background:#333; color:#0f0; border:1px solid #0f0;">LOGIN</button>
                <button onclick="mostrarModo('registro')" style="background:#333; color:#0f0; border:1px solid #0f0;">REGISTRO</button>
             </div>
@@ -66,8 +72,24 @@
                 <button onclick="registro()" style="background:#00ffff;">CREAR CUENTA</button>
             </div>
 
+            <!-- MENÚ DE SELECCIÓN DE PERSONAJE -->
+            <div id="menu-personaje">
+                <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')">
+                    <div class="preview circ"></div>
+                    <span>ASALTANTE</span>
+                </div>
+                <div class="card-pj" id="card-cuadrado" onclick="seleccionarClase('cuadrado')">
+                    <div class="preview"></div>
+                    <span>TANQUE</span>
+                </div>
+                <div class="card-pj" id="card-triangulo" onclick="seleccionarClase('triangulo')">
+                    <div class="preview tri"></div>
+                    <span>ESTRATEGA</span>
+                </div>
+            </div>
+
             <p id="txt-sala" style="margin-top:20px; font-weight:bold; color:#0f0;">Conectando al servidor...</p>
-            <button id="btn-start" style="display:none; background:#ff00ff; color:white; animation: pulse 1.5s infinite;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
+            <button id="btn-start" style="display:none; background:#ff00ff; color:white;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
         </div>
     </div>
 
@@ -90,18 +112,16 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
-// CONFIGURACIÓN INICIAL
 const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, speed: 6, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0 };
+let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
 let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
 let trails = {}, particles = [];
 let juegoIniciado = false, joyX = 0, joyY = 0, teclas = {};
 let fueraInterval = null;
 
-// DETECCIÓN DE MÓVIL
 if(/Android|iPhone/i.test(navigator.userAgent)) {
     document.getElementById('ui-android').style.display = 'block';
     document.getElementById('dash-count').style.display = 'block';
@@ -110,10 +130,20 @@ if(/Android|iPhone/i.test(navigator.userAgent)) {
 window.onkeydown = e => teclas[e.code] = true;
 window.onkeyup = e => teclas[e.code] = false;
 
-// FUNCIONES DE UI
 function mostrarModo(modo) {
     document.getElementById('form-login').style.display = modo === 'login' ? 'block' : 'none';
     document.getElementById('form-registro').style.display = modo === 'registro' ? 'block' : 'none';
+}
+
+function seleccionarClase(clase) {
+    player.type = clase;
+    document.querySelectorAll('.card-pj').forEach(c => c.classList.remove('selected'));
+    document.getElementById('card-' + clase).classList.add('selected');
+    
+    // Ajustes de balance
+    if(clase === 'circulo') player.speed = 7.5; 
+    if(clase === 'cuadrado') player.speed = 5.5;
+    if(clase === 'triangulo') player.speed = 6.0;
 }
 
 function login() { 
@@ -133,24 +163,20 @@ function registro() {
     socket.emit('registrar_usuario', datos);
 }
 
-// EVENTOS SOCKET
-socket.on('connect', () => {
-    document.getElementById('txt-sala').innerText = "Sistema En Línea. Esperando Login...";
-});
-
 socket.on('login_resultado', d => {
     if(d.exito) {
         document.getElementById('form-login').style.display = 'none';
-        document.getElementById('form-registro').style.display = 'none';
-        document.querySelector('.form-container h1').innerText = "¡PREPÁRATE!";
+        document.getElementById('auth-buttons').style.display = 'none';
+        document.getElementById('menu-personaje').style.display = 'flex';
+        document.querySelector('.form-container h1').innerText = "ELIGE TU FORMA";
     } else {
-        alert("Error de acceso. Revisa tus credenciales.");
+        alert("Error de acceso.");
     }
 });
 
 socket.on('registro_resultado', d => {
-    if(d.exito) { alert("¡Cuenta creada! Ya puedes iniciar sesión."); mostrarModo('login'); }
-    else alert("El usuario o correo ya existen.");
+    if(d.exito) { alert("¡Cuenta creada!"); mostrarModo('login'); }
+    else alert("Error en registro.");
 });
 
 socket.on('actualizar_sala', d => {
@@ -172,16 +198,9 @@ socket.on('actualizar_zona', d => {
 
 socket.on('efecto_explosion', d => createExplosion(d.x, d.y));
 
-// LÓGICA DE JUEGO
 function createExplosion(x, y) {
     for(let i=0; i<20; i++) {
-        particles.push({
-            x, y, 
-            vx: (Math.random()-0.5)*12, 
-            vy: (Math.random()-0.5)*12, 
-            life: 1.0, 
-            color: '#0f0'
-        });
+        particles.push({ x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 1.0 });
     }
 }
 
@@ -206,16 +225,14 @@ function handleInput() {
             player.x = nextX; player.y = nextY;
             player.angle = Math.atan2(dy, dx);
             player.anim += 0.2;
-            player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.35;
+            player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.2;
             
-            // Estela
             if(!trails[socket.id]) trails[socket.id] = [];
             trails[socket.id].push({x: player.x, y: player.y});
-            if(trails[socket.id].length > 15) trails[socket.id].shift();
+            if(trails[socket.id].length > 10) trails[socket.id].shift();
         }
     }
 
-    // Colisiones
     items.forEach(it => {
         if(Math.hypot(player.x - it.x, player.y - it.y) < 35) {
             if(it.type === 'weapon' && !player.hasWeapon) {
@@ -231,18 +248,15 @@ function handleInput() {
 
     if(player.hasWeapon) {
         for(let id in players) {
-            if(id !== socket.id) {
-                let p = players[id];
-                if(Math.hypot(player.x - p.x, player.y - p.y) < 40) socket.emit('eliminar_jugador', id);
-            }
+            let p = players[id];
+            if(Math.hypot(player.x - p.x, player.y - p.y) < 40) socket.emit('eliminar_jugador', id);
         }
     }
 
-    // Zona
     const dist = Math.hypot(player.x - zona.x, player.y - zona.y);
     if(dist > zona.radio && player.vivo) {
         if(!fueraInterval) {
-            let t = 5;
+            let t = (player.type === 'cuadrado') ? 7 : 5; // Tanque dura más
             document.getElementById('aviso-zona').style.display = 'block';
             fueraInterval = setInterval(() => {
                 t--; document.getElementById('count-zona').innerText = t;
@@ -256,85 +270,80 @@ function handleInput() {
 }
 
 function ejecutarDash() {
-    if(player.dashCharges > 0 && player.speed === 6) {
+    if(player.dashCharges > 0 && player.speed < 15) {
+        const prevSpeed = player.speed;
         player.speed = 22; player.dashCharges--;
         document.getElementById('dash-count').innerText = `DASH: ${player.dashCharges}`;
-        setTimeout(() => player.speed = 6, 250);
+        setTimeout(() => player.speed = prevSpeed, 200);
     }
 }
 
-// RENDERIZADO
+function drawShape(p, isMe) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = p.hasWeapon ? "#f00" : (isMe ? "#0f0" : "#555");
+    ctx.fillStyle = ctx.shadowColor;
+
+    if(p.type === 'cuadrado') {
+        ctx.fillRect(-18, -18, 36, 36);
+    } else if(p.type === 'triangulo') {
+        ctx.beginPath();
+        ctx.moveTo(22, 0); ctx.lineTo(-15, 18); ctx.lineTo(-15, -18);
+        ctx.closePath(); ctx.fill();
+    } else {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 15 * (p.stretch || 1), 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
+    ctx.restore();
+}
+
 function draw() {
     if(juegoIniciado) handleInput();
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    ctx.fillStyle = '#050505';
-    ctx.fillRect(0,0, canvas.width, canvas.height);
+    ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
     
     if(!juegoIniciado) { requestAnimationFrame(draw); return; }
 
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
 
-    // Muros neón
-    ctx.shadowBlur = 15; ctx.shadowColor = "#333";
     ctx.fillStyle = "#1a1a1a"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
 
-    // Estelas
     for(let id in trails) {
-        ctx.beginPath();
-        ctx.lineWidth = 8;
-        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.1)';
-        trails[id].forEach((p, i) => ctx.lineTo(p.x, p.y));
-        ctx.stroke();
+        ctx.beginPath(); ctx.lineWidth = 4;
+        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+        trails[id].forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
     }
 
-    // Partículas
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
-        ctx.fillRect(p.x, p.y, 4, 4);
+        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`; ctx.fillRect(p.x, p.y, 3, 3);
         if(p.life <= 0) particles.splice(i, 1);
     });
 
-    // Items
     items.forEach(it => {
-        ctx.shadowBlur = 10; ctx.shadowColor = it.type === 'weapon' ? '#f00' : '#0ff';
-        ctx.fillStyle = it.type === 'weapon' ? '#ff0000' : '#00ffff';
-        ctx.fillRect(it.x, it.y, 22, 22);
+        ctx.fillStyle = it.type === 'weapon' ? '#f00' : '#0ff';
+        ctx.fillRect(it.x, it.y, 20, 20);
     });
 
-    // Otros Jugadores
-    for(let id in players) {
-        let p = players[id];
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-        ctx.shadowBlur = 10; ctx.shadowColor = p.hasWeapon ? "#f00" : "#555";
-        ctx.fillStyle = p.hasWeapon ? "#f00" : "#555";
-        ctx.beginPath(); ctx.ellipse(0, 0, 15*(p.stretch||1), 13, 0, 0, Math.PI*2); ctx.fill();
-        if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
-        ctx.restore();
-    }
-
-    // Mi Jugador
+    for(let id in players) drawShape(players[id], false);
     if(player.vivo) {
-        ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-        ctx.shadowBlur = 20; ctx.shadowColor = player.hasWeapon ? "#f00" : "#0f0";
-        ctx.fillStyle = player.hasWeapon ? "#f00" : "#0f0";
-        ctx.beginPath(); ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-        if(player.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
-        ctx.restore();
-        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
+        drawShape(player, true);
+        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon, type: player.type });
     }
 
-    // Zona
-    ctx.shadowBlur = 20; ctx.shadowColor = "red";
-    ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"; ctx.lineWidth = 15;
+    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
     ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
 
     ctx.restore();
     requestAnimationFrame(draw);
 }
 
-// JOYSTICK
 const jBase = document.getElementById('joy-base'), jStick = document.getElementById('joy-stick');
 jBase.ontouchmove = e => {
     const t = e.touches[0], r = jBase.getBoundingClientRect();
@@ -346,21 +355,18 @@ jBase.ontouchmove = e => {
 jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
 document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); ejecutarDash(); };
 
-// RESULTADOS FINALES
 socket.on('has_muerto', (ranking) => {
     player.vivo = false;
     document.getElementById('pantalla-fin').style.display = 'flex';
     document.getElementById('titulo-final').innerText = "ELIMINADO";
-    document.getElementById('titulo-final').style.color = "#ff0000";
     document.getElementById('texto-puesto').innerText = "#" + ranking;
 });
 
 socket.on('eres_ganador', (stats) => {
     document.getElementById('pantalla-fin').style.display = 'flex';
     document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
-    document.getElementById('titulo-final').style.color = "#0f0";
     document.getElementById('texto-puesto').innerText = "#1";
-    document.getElementById('stats-jugador').innerHTML = `Victorias Totales: ${stats.victorias} | Monedas: ${stats.monedas}`;
+    document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
 });
 
 draw();
@@ -368,7 +374,7 @@ socket.on('playerMoved', d => {
     players[d.id] = d;
     if(!trails[d.id]) trails[d.id] = [];
     trails[d.id].push({x: d.x, y: d.y});
-    if(trails[d.id].length > 15) trails[d.id].shift();
+    if(trails[d.id].length > 10) trails[d.id].shift();
 });
 socket.on('playerDisconnected', id => { delete players[id]; delete trails[id]; });
 socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
