@@ -354,20 +354,19 @@ document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); 
 // --- CORRECCIÓN DE LÓGICA DE VICTORIA ---
 
 socket.on('has_muerto', (ranking) => {
-    // Solo mostrar si la partida realmente estaba en curso
-    if (juegoIniciado) {
+    // Si la pantalla de inicio sigue visible, ignoramos cualquier señal de muerte
+    if (document.getElementById('pantalla-inicio').style.display === 'none') {
         player.vivo = false;
         document.getElementById('pantalla-fin').style.display = 'flex';
         document.getElementById('titulo-final').innerText = "ELIMINADO";
         document.getElementById('texto-puesto').innerText = "#" + ranking;
-        juegoIniciado = false; 
+        juegoIniciado = false;
     }
 });
 
 socket.on('eres_ganador', (stats) => {
-    // IMPORTANTE: Solo saltar a victoria si el juego ya había empezado
-    // Esto evita que ganes apenas entras al lobby solo.
-    if (juegoIniciado) {
+    // Solo permitimos la pantalla de victoria si el juego ya arrancó (pantalla inicio oculta)
+    if (document.getElementById('pantalla-inicio').style.display === 'none' && juegoIniciado === true) {
         document.getElementById('pantalla-fin').style.display = 'flex';
         document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
         document.getElementById('texto-puesto').innerText = "#1";
