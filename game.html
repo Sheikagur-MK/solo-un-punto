@@ -334,7 +334,9 @@ function draw() {
 
     for(let id in players) drawShape(players[id], false);
     if(player.vivo) {
-        drawShape(player, true);
+    drawShape(player, true);
+    // CAMBIO AQUÍ: Solo avisar al servidor si ya entramos al mapa
+    if (juegoIniciado) { 
         socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon, type: player.type });
     }
 
