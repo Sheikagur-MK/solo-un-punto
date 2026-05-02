@@ -18,14 +18,14 @@
 
         /* PANTALLAS */
         .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 450px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
         
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
-        input:focus { box-shadow: 0 0 15px #0f0; }
-        
-        button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.02); }
+        /* CANDADO VISUAL: La pantalla de fin nace muerta */
+        #pantalla-fin { display: none !important; z-index: 10000; }
 
+        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 450px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
+        button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        
         /* LOBBY Y STATS */
         #lobby-menu { display: none; width: 100%; }
         .stats-bar { display: flex; justify-content: space-around; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #0f0; color: #0ff; font-weight: bold; }
@@ -33,22 +33,19 @@
         /* TARJETAS DE PERSONAJE */
         .grid-personajes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; font-size: 0.7em; }
-        .card-pj:hover { border-color: #0f0; transform: translateY(-3px); }
         .card-pj.selected { border-color: #0f0; background: #030; box-shadow: 0 0 15px #0f0; }
-        
         .attr-bar { background: #333; height: 4px; width: 100%; margin-top: 4px; border-radius: 2px; overflow: hidden; }
         .attr-fill { height: 100%; background: #0f0; }
-        .attr-label { font-size: 9px; color: #aaa; margin-top: 4px; display: block; text-align: left; }
 
         .preview { width: 30px; height: 30px; margin: 0 auto 10px; border: 2px solid #fff; }
         .circ { border-radius: 50%; }
-        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; border-top: 0; background: none; }
+        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; }
 
         /* CONTROLES MÓVILES */
         #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
         #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 20px #0f0; }
-        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #0ff; color: #000; }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; }
+        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -61,7 +58,6 @@
             <div class="logo-hg">HG STUDIOS V2.0</div>
             <h1 style="color:#0f0; margin: 5px 0 20px; text-shadow: 0 0 15px #0f0; letter-spacing: 2px;">SOLO UN PUNTO</h1>
             
-            <!-- LOGIN / REGISTRO -->
             <div id="seccion-auth">
                 <div style="display:flex; gap:10px; margin-bottom: 15px;">
                    <button onclick="mostrarModo('login')" style="background:#333; color:#0f0; border:1px solid #0f0;">LOGIN</button>
@@ -80,54 +76,34 @@
                 </div>
             </div>
 
-            <!-- LOBBY PRINCIPAL -->
             <div id="lobby-menu">
                 <div class="stats-bar">
                     <span>🏆 <span id="val-victorias">0</span></span>
                     <span>💰 <span id="val-monedas">0</span></span>
                     <span id="val-username" style="color:#0f0">GUERRERO</span>
                 </div>
-
-                <h3 style="color:#fff; font-size: 0.9em; margin-bottom: 10px;">SELECCIONA TU CLASE</h3>
                 <div class="grid-personajes">
                     <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')">
-                        <div class="preview circ"></div>
-                        <strong>ASALTANTE</strong>
-                        <span class="attr-label">MOVILIDAD</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 90%;"></div></div>
-                        <span class="attr-label">RESISTENCIA</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 40%; background: #f00;"></div></div>
+                        <div class="preview circ"></div><strong>ASALTANTE</strong>
                     </div>
                     <div class="card-pj" id="card-cuadrado" onclick="seleccionarClase('cuadrado')">
-                        <div class="preview" style="border-radius: 2px;"></div>
-                        <strong>TANQUE</strong>
-                        <span class="attr-label">MOVILIDAD</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 30%;"></div></div>
-                        <span class="attr-label">RESISTENCIA</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 95%; background: #0ff;"></div></div>
+                        <div class="preview" style="border-radius:2px"></div><strong>TANQUE</strong>
                     </div>
                     <div class="card-pj" id="card-triangulo" onclick="seleccionarClase('triangulo')">
-                        <div class="preview tri"></div>
-                        <strong>ESTRATEGA</strong>
-                        <span class="attr-label">VELOCIDAD</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 65%;"></div></div>
-                        <span class="attr-label">DAÑO</span>
-                        <div class="attr-bar"><div class="attr-fill" style="width: 80%; background: #f0f;"></div></div>
+                        <div class="preview tri"></div><strong>ESTRATEGA</strong>
                     </div>
                 </div>
-
-                <p id="txt-sala" style="color:#0f0; font-size: 0.8em; font-weight:bold;">Conectando al servidor...</p>
-                <button id="btn-start" style="display:none; background:#ff00ff; color:white;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
+                <p id="txt-sala" style="color:#0f0; font-size: 0.8em; font-weight:bold;">Conectando...</p>
+                <button id="btn-start" style="display:none; background:#f0f; color:white;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
             </div>
         </div>
     </div>
 
-    <!-- PANTALLA FINAL -->
     <div id="pantalla-fin" class="pantalla">
         <div class="form-container" style="border-color: #0ff;">
             <h1 id="titulo-final">FIN DEL COMBATE</h1>
             <div id="texto-puesto">#1</div>
-            <div class="stats-finales" id="stats-jugador"></div>
+            <div id="stats-jugador"></div>
             <button onclick="location.reload()" style="background:#0f0;">VOLVER AL LOBBY</button>
         </div>
     </div>
@@ -147,9 +123,11 @@ const ctx = canvas.getContext('2d');
 
 let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
 let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
-let trails = {}, particles = [];
 let juegoIniciado = false, joyX = 0, joyY = 0, teclas = {};
 let fueraInterval = null;
+
+// Asegurar estado inicial
+document.getElementById('pantalla-fin').style.setProperty('display', 'none', 'important');
 
 if(/Android|iPhone/i.test(navigator.userAgent)) {
     document.getElementById('ui-android').style.display = 'block';
@@ -168,17 +146,13 @@ function seleccionarClase(clase) {
     player.type = clase;
     document.querySelectorAll('.card-pj').forEach(c => c.classList.remove('selected'));
     document.getElementById('card-' + clase).classList.add('selected');
-    
-    if(clase === 'circulo') player.speed = 7.5; 
-    if(clase === 'cuadrado') player.speed = 5.5;
-    if(clase === 'triangulo') player.speed = 6.5;
+    player.speed = (clase === 'circulo') ? 7.5 : (clase === 'cuadrado' ? 5.5 : 6.5);
 }
 
 function login() { 
     const email = document.getElementById('l-email').value;
     const pass = document.getElementById('l-pass').value;
-    if(!email || !pass) return alert("Ingresa tus datos");
-    socket.emit('login_usuario', { email: email, password: pass }); 
+    if(email && pass) socket.emit('login_usuario', { email, password: pass }); 
 }
 
 function registro() {
@@ -187,8 +161,7 @@ function registro() {
         email: document.getElementById('r-email').value, 
         password: document.getElementById('r-pass').value 
     };
-    if(!datos.username || !datos.email || !datos.password) return alert("Llena todos los campos");
-    socket.emit('registrar_usuario', datos);
+    if(datos.username && datos.email && datos.password) socket.emit('registrar_usuario', datos);
 }
 
 socket.on('login_resultado', d => {
@@ -198,13 +171,7 @@ socket.on('login_resultado', d => {
         document.getElementById('val-monedas').innerText = d.monedas;
         document.getElementById('val-victorias').innerText = d.victorias;
         document.getElementById('val-username').innerText = d.username.toUpperCase();
-        document.querySelector('.form-container h1').innerText = "CENTRO DE MANDO";
     } else { alert("Error de acceso."); }
-});
-
-socket.on('registro_resultado', d => {
-    if(d.exito) { alert("¡Cuenta creada!"); mostrarModo('login'); }
-    else alert("Error en registro.");
 });
 
 socket.on('actualizar_sala', d => {
@@ -212,23 +179,32 @@ socket.on('actualizar_sala', d => {
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
-// Asegúrate de que el botón de inicio de partida funcione correctamente
 socket.on('iniciar_partida', d => {
-    items = d.items; 
-    zona = d.zona; 
-    walls = d.walls || [];
-    
-    // Forzamos el estado de juego y ocultamos TODO lo demás
+    items = d.items; zona = d.zona; walls = d.walls || [];
     juegoIniciado = true;
     player.vivo = true; 
-    
     document.getElementById('pantalla-inicio').style.display = 'none';
-    document.getElementById('pantalla-fin').style.display = 'none';
+    document.getElementById('pantalla-fin').style.setProperty('display', 'none', 'important');
 });
-socket.on('actualizar_zona', d => {
-    zona = d.zona;
-    document.getElementById('fase-val').innerText = d.fase;
-    document.getElementById('timer-val').innerText = d.tiempo;
+
+socket.on('eres_ganador', (stats) => {
+    if (juegoIniciado) {
+        document.getElementById('pantalla-fin').style.setProperty('display', 'flex', 'important');
+        document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
+        document.getElementById('texto-puesto').innerText = "#1";
+        document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
+        juegoIniciado = false;
+    }
+});
+
+socket.on('has_muerto', (ranking) => {
+    if (juegoIniciado) {
+        player.vivo = false;
+        document.getElementById('pantalla-fin').style.setProperty('display', 'flex', 'important');
+        document.getElementById('titulo-final').innerText = "ELIMINADO";
+        document.getElementById('texto-puesto').innerText = "#" + ranking;
+        juegoIniciado = false;
+    }
 });
 
 function drawShape(p, isMe) {
@@ -242,15 +218,10 @@ function drawShape(p, isMe) {
     if(p.type === 'cuadrado') {
         ctx.fillRect(-18, -18, 36, 36);
     } else if(p.type === 'triangulo') {
-        ctx.beginPath();
-        ctx.moveTo(22, 0); ctx.lineTo(-15, 18); ctx.lineTo(-15, -18);
-        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(-15, 18); ctx.lineTo(-15, -18); ctx.closePath(); ctx.fill();
     } else {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 15 * (p.stretch || 1), 13, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 0, 15 * (p.stretch || 1), 13, 0, 0, Math.PI * 2); ctx.fill();
     }
-    
     if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
     ctx.restore();
 }
@@ -276,23 +247,19 @@ function handleInput() {
             player.angle = Math.atan2(dy, dx);
             player.anim += 0.2;
             player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.2;
-            if(!trails[socket.id]) trails[socket.id] = [];
-            trails[socket.id].push({x: player.x, y: player.y});
-            if(trails[socket.id].length > 10) trails[socket.id].shift();
         }
     }
 
     items.forEach(it => {
         if(Math.hypot(player.x - it.x, player.y - it.y) < 35) {
             if(it.type === 'weapon' && !player.hasWeapon) { player.hasWeapon = true; socket.emit('item_recogido', it.id); }
-            else if(it.type === 'dash') { player.dashCharges = 5; document.getElementById('dash-count').innerText = `DASH: ${player.dashCharges}`; socket.emit('item_recogido', it.id); }
+            else if(it.type === 'dash') { player.dashCharges = 5; socket.emit('item_recogido', it.id); }
         }
     });
 
     if(player.hasWeapon) {
         for(let id in players) {
-            let p = players[id];
-            if(Math.hypot(player.x - p.x, player.y - p.y) < 40) socket.emit('eliminar_jugador', id);
+            if(Math.hypot(player.x - players[id].x, player.y - players[id].y) < 40) socket.emit('eliminar_jugador', id);
         }
     }
 
@@ -312,16 +279,16 @@ function handleInput() {
 function ejecutarDash() {
     if(player.dashCharges > 0 && player.speed < 15) {
         const prevSpeed = player.speed; player.speed = 22; player.dashCharges--;
-        document.getElementById('dash-count').innerText = `DASH: ${player.dashCharges}`;
         setTimeout(() => player.speed = prevSpeed, 200);
     }
 }
 
 function draw() {
-    if(juegoIniciado) handleInput();
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
+    
     if(!juegoIniciado) { requestAnimationFrame(draw); return; }
+    handleInput();
 
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
@@ -334,9 +301,7 @@ function draw() {
 
     for(let id in players) drawShape(players[id], false);
     if(player.vivo) {
-    drawShape(player, true);
-    // CAMBIO AQUÍ: Solo avisar al servidor si ya entramos al mapa
-    if (juegoIniciado) { 
+        drawShape(player, true);
         socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon, type: player.type });
     }
 
@@ -357,33 +322,15 @@ jBase.ontouchmove = e => {
 jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
 document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); ejecutarDash(); };
 
-// --- CORRECCIÓN DE LÓGICA DE VICTORIA ---
-
-socket.on('has_muerto', (ranking) => {
-    // Si la pantalla de inicio sigue visible, ignoramos cualquier señal de muerte
-    if (document.getElementById('pantalla-inicio').style.display === 'none') {
-        player.vivo = false;
-        document.getElementById('pantalla-fin').style.display = 'flex';
-        document.getElementById('titulo-final').innerText = "ELIMINADO";
-        document.getElementById('texto-puesto').innerText = "#" + ranking;
-        juegoIniciado = false;
-    }
-});
-
-socket.on('eres_ganador', (stats) => {
-    // Solo permitimos la pantalla de victoria si el juego ya arrancó (pantalla inicio oculta)
-    if (document.getElementById('pantalla-inicio').style.display === 'none' && juegoIniciado === true) {
-        document.getElementById('pantalla-fin').style.display = 'flex';
-        document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
-        document.getElementById('texto-puesto').innerText = "#1";
-        document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
-        juegoIniciado = false;
-    }
-});
-
 socket.on('playerMoved', d => { players[d.id] = d; });
 socket.on('playerDisconnected', id => { delete players[id]; });
 socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
+socket.on('actualizar_zona', d => {
+    zona = d.zona;
+    document.getElementById('fase-val').innerText = d.fase;
+    document.getElementById('timer-val').innerText = d.tiempo;
+});
+
 draw();
 </script>
 </body>
