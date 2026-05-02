@@ -212,12 +212,15 @@ socket.on('actualizar_sala', d => {
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
+// Asegúrate de que el botón de inicio de partida funcione correctamente
 socket.on('iniciar_partida', d => {
-    items = d.items; zona = d.zona; walls = d.walls || [];
-    juegoIniciado = true;
+    items = d.items; 
+    zona = d.zona; 
+    walls = d.walls || [];
+    juegoIniciado = true; // Ahora el juego permite procesar victorias/derrotas
     document.getElementById('pantalla-inicio').style.display = 'none';
+    document.getElementById('pantalla-fin').style.display = 'none'; // Por si acaso
 });
-
 socket.on('actualizar_zona', d => {
     zona = d.zona;
     document.getElementById('fase-val').innerText = d.fase;
@@ -348,18 +351,29 @@ jBase.ontouchmove = e => {
 jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
 document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); ejecutarDash(); };
 
+// --- CORRECCIÓN DE LÓGICA DE VICTORIA ---
+
 socket.on('has_muerto', (ranking) => {
-    player.vivo = false;
-    document.getElementById('pantalla-fin').style.display = 'flex';
-    document.getElementById('titulo-final').innerText = "ELIMINADO";
-    document.getElementById('texto-puesto').innerText = "#" + ranking;
+    // Solo mostrar si la partida realmente estaba en curso
+    if (juegoIniciado) {
+        player.vivo = false;
+        document.getElementById('pantalla-fin').style.display = 'flex';
+        document.getElementById('titulo-final').innerText = "ELIMINADO";
+        document.getElementById('texto-puesto').innerText = "#" + ranking;
+        juegoIniciado = false; 
+    }
 });
 
 socket.on('eres_ganador', (stats) => {
-    document.getElementById('pantalla-fin').style.display = 'flex';
-    document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
-    document.getElementById('texto-puesto').innerText = "#1";
-    document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
+    // IMPORTANTE: Solo saltar a victoria si el juego ya había empezado
+    // Esto evita que ganes apenas entras al lobby solo.
+    if (juegoIniciado) {
+        document.getElementById('pantalla-fin').style.display = 'flex';
+        document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
+        document.getElementById('texto-puesto').innerText = "#1";
+        document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
+        juegoIniciado = false;
+    }
 });
 
 socket.on('playerMoved', d => { players[d.id] = d; });
