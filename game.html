@@ -217,9 +217,13 @@ socket.on('iniciar_partida', d => {
     items = d.items; 
     zona = d.zona; 
     walls = d.walls || [];
-    juegoIniciado = true; // Ahora el juego permite procesar victorias/derrotas
+    
+    // Forzamos el estado de juego y ocultamos TODO lo demás
+    juegoIniciado = true;
+    player.vivo = true; 
+    
     document.getElementById('pantalla-inicio').style.display = 'none';
-    document.getElementById('pantalla-fin').style.display = 'none'; // Por si acaso
+    document.getElementById('pantalla-fin').style.display = 'none';
 });
 socket.on('actualizar_zona', d => {
     zona = d.zona;
