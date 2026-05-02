@@ -3,149 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Solo un Punto - Battle Royale</title>
+    <title>Solo un Punto - Next Gen 2026</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
-
+    
         /* UI DE AVISOS */
-        #ui-info { position: fixed; top: 10px; right: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; border: 1px solid #0f0; z-index: 100; font-size: 14px; }
-        #aviso-zona { position: fixed; top: 25%; left: 50%; transform: translateX(-50%); color: #ff0000; font-size: 2.5em; font-weight: bold; display: none; z-index: 100; text-shadow: 3px 3px #000; text-align: center; }
-        #dash-count { position: fixed; bottom: 150px; right: 40px; color: #00ffff; font-size: 1.5em; font-weight: bold; text-shadow: 2px 2px #000; display: none; }
+        #ui-info { position: fixed; top: 10px; right: 10px; color: white; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #0f0; z-index: 100; font-size: 14px; box-shadow: 0 0 10px #0f0; }
+        #aviso-zona { position: fixed; top: 25%; left: 50%; transform: translateX(-50%); color: #ff0000; font-size: 2.5em; font-weight: bold; display: none; z-index: 100; text-shadow: 0 0 20px #f00; text-align: center; }
+        #dash-count { position: fixed; bottom: 150px; right: 40px; color: #00ffff; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 10px #0ff; display: none; }
 
         /* PANTALLAS */
-        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .form-container { background: #1a1a1a; padding: 25px; border-radius: 15px; border: 2px solid #00ff00; width: 85%; max-width: 320px; text-align: center; }
-        input { width: 90%; padding: 10px; margin: 8px 0; border-radius: 5px; border: 1px solid #0f0; background: #222; color: #0f0; }
-        button { width: 100%; padding: 12px; background: #00ff00; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; margin-top: 10px; }
+        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
+        
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
+        input:focus { box-shadow: 0 0 15px #0f0; }
+        
+        button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.02); }
 
         /* PANTALLA FINAL */
-        #pantalla-fin { display: none; background: rgba(0,0,0,0.9); z-index: 10000; }
-        #texto-puesto { font-size: 4em; color: #0f0; margin: 10px 0; }
+        #pantalla-fin { display: none; background: rgba(0,0,0,0.95); z-index: 10000; }
+        #texto-puesto { font-size: 5em; color: #0f0; margin: 10px 0; text-shadow: 0 0 30px #0f0; }
+        .stats-finales { color: #0ff; margin-bottom: 20px; font-size: 1.1em; }
         
-        /* CONTROLES ANDROID */
+        /* CONTROLES MÓVILES */
         #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
-        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(255,255,255,0.3); }
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 15px #0f0; }
-        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 85px; height: 85px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 20px #0ff; }
-    
-  .btn-animado {
-    position: relative;
-    width: 45%;
-    display: inline-block;
-    font-size: 0.8em;
-    background: #0f0;
-    color: black;
-    border: none;
-    padding: 10px;
-    cursor: pointer;
-    overflow: hidden; /* Para que el punto no se salga del botón */
-  }
+        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 20px #0f0; }
+        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #0ff; color: #000; }
 
-  /* El "puntito" que corre por el borde */
-  .btn-animado::before {
-    content: '';
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: white; /* Color del puntito */
-    border-radius: 50%;
-    top: -10px; /* Escondido al inicio */
-    left: -10px;
-    opacity: 0;
-    transition: opacity 0.3s;
-  }
-
-  /* Animación al poner el mouse (hover) */
-  .btn-animado:hover::before {
-    opacity: 1;
-    animation: correrContorno 1.5s linear infinite;
-  }
-
-  @keyframes correrContorno {
-    0%   { top: 0; left: 0; }
-    25%  { top: 0; left: 100%; transform: translateX(-100%); }
-    50%  { top: 100%; left: 100%; transform: translate(-100%, -100%); }
-    75%  { top: 100%; left: 0; transform: translateY(-100%); }
-    100% { top: 0; left: 0; }
-  }
-        .modal-overlay {
-    display: none; /* Escondido por defecto */
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    z-index: 10000;
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background: #000;
-    border: 2px solid #0f0;
-    padding: 30px;
-    text-align: center;
-    box-shadow: 0 0 20px #0f0, inset 0 0 10px #0f0;
-    font-family: 'Courier New', Courier, monospace;
-    color: #0f0;
-    max-width: 400px;
-}
-
-.canvas-container {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 20px;
-}
-
-.modal-content h2 {
-    text-shadow: 0 0 10px #0f0;
-    letter-spacing: 2px;
-}
-</style>
+        /* ANIMACIÓN MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
+        .modal-content { background: #000; border: 2px solid #0f0; padding: 40px; text-align: center; box-shadow: 0 0 30px #0f0; color: #0f0; border-radius: 15px; }
+    </style>
 </head>
 <body>
-   <div id="modal-neon" class="modal-overlay">
-    <div class="modal-content">
-        <div class="canvas-container">
-            <canvas id="canvas-animacion"></canvas>
-        </div>
-        <h2>¡LISTO GUERRERO!</h2>
-        <p>AHORA A LA BATALLA</p>
-        <button onclick="cerrarModal()" class="btn-animado">ACEPTAR</button>
-    </div>
-</div> 
     <div id="ui-info">FASE: <span id="fase-val">1</span>/4 | CIERRE EN: <span id="timer-val">120</span>s</div>
     <div id="aviso-zona">¡FUERA DE LA ZONA!<br><span id="count-zona">5</span>s</div>
     <div id="dash-count">DASH: 0</div>
 
+    <!-- PANTALLA INICIO -->
     <div id="pantalla-inicio" class="pantalla">
         <div class="form-container"> 
-            <h1 style="color:#0f0; margin-bottom:10px;">SOLO UN PUNTO</h1>
-            <div style="margin-bottom: 15px;">
-               <button onclick="mostrarModo('login')" class="btn-animado">LOGIN</button>
-               <button onclick="mostrarModo('registro')" class="btn-animado">REGISTRO</button>
+            <h1 style="color:#0f0; margin-bottom:10px; text-shadow: 0 0 15px #0f0;">SOLO UN PUNTO</h1>
+            <div style="display:flex; gap:10px; margin-bottom: 15px;">
+               <button onclick="mostrarModo('login')" style="background:#333; color:#0f0; border:1px solid #0f0;">LOGIN</button>
+               <button onclick="mostrarModo('registro')" style="background:#333; color:#0f0; border:1px solid #0f0;">REGISTRO</button>
             </div>
+            
             <div id="form-login">
-                <input type="email" id="l-email" placeholder="Correo">
+                <input type="email" id="l-email" placeholder="Correo Electrónico">
                 <input type="password" id="l-pass" placeholder="Contraseña">
-                <button onclick="login()">ENTRAR</button>
+                <button onclick="login()">ENTRAR A BATALLA</button>
             </div>
+            
             <div id="form-registro" style="display:none;">
-                <input type="text" id="r-user" placeholder="Nombre de Usuario">
-                <input type="email" id="r-email" placeholder="Correo">
+                <input type="text" id="r-user" placeholder="Nombre de Guerrero">
+                <input type="email" id="r-email" placeholder="Correo Electrónico">
                 <input type="password" id="r-pass" placeholder="Contraseña">
-                <button onclick="registro()" style="background:#00ffff; color:#000;">CREAR CUENTA</button>
+                <button onclick="registro()" style="background:#00ffff;">CREAR CUENTA</button>
             </div>
-            <p id="txt-sala" style="margin-top:15px; font-size:0.9em; color:#0f0;">Conectado al sistema</p>
-            <button id="btn-start" style="display:none; background:#ff00ff;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
+
+            <p id="txt-sala" style="margin-top:20px; font-weight:bold; color:#0f0;">Conectando al servidor...</p>
+            <button id="btn-start" style="display:none; background:#ff00ff; color:white; animation: pulse 1.5s infinite;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
         </div>
     </div>
 
+    <!-- PANTALLA FINAL -->
     <div id="pantalla-fin" class="pantalla">
-        <div class="form-container" style="border-color: #ff00ff;">
-            <h1 id="titulo-final">FIN DE LA PARTIDA</h1>
+        <div class="form-container" style="border-color: #0ff;">
+            <h1 id="titulo-final">FIN DEL COMBATE</h1>
             <div id="texto-puesto">#1</div>
-            <p id="subtexto-final">Cargando resultados...</p>
-            <button onclick="location.reload()" style="background:#0ff; color:#000;">VOLVER AL INICIO</button>
+            <div class="stats-finales" id="stats-jugador"></div>
+            <button onclick="location.reload()" style="background:#0f0;">VOLVER AL LOBBY</button>
         </div>
     </div>
 
@@ -158,15 +90,18 @@
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
+// CONFIGURACIÓN INICIAL
 const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let player = { x: 2500, y: 2500, speed: 6, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0 };
 let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
+let trails = {}, particles = [];
 let juegoIniciado = false, joyX = 0, joyY = 0, teclas = {};
 let fueraInterval = null;
 
+// DETECCIÓN DE MÓVIL
 if(/Android|iPhone/i.test(navigator.userAgent)) {
     document.getElementById('ui-android').style.display = 'block';
     document.getElementById('dash-count').style.display = 'block';
@@ -175,62 +110,51 @@ if(/Android|iPhone/i.test(navigator.userAgent)) {
 window.onkeydown = e => teclas[e.code] = true;
 window.onkeyup = e => teclas[e.code] = false;
 
-function login() { socket.emit('login_usuario', { email: document.getElementById('l-email').value, password: document.getElementById('l-pass').value }); }
-
+// FUNCIONES DE UI
 function mostrarModo(modo) {
     document.getElementById('form-login').style.display = modo === 'login' ? 'block' : 'none';
     document.getElementById('form-registro').style.display = modo === 'registro' ? 'block' : 'none';
 }
 
+function login() { 
+    const email = document.getElementById('l-email').value;
+    const pass = document.getElementById('l-pass').value;
+    if(!email || !pass) return alert("Ingresa tus datos");
+    socket.emit('login_usuario', { email: email, password: pass }); 
+}
+
 function registro() {
-    const datos = { username: document.getElementById('r-user').value, email: document.getElementById('r-email').value, password: document.getElementById('r-pass').value };
+    const datos = { 
+        username: document.getElementById('r-user').value, 
+        email: document.getElementById('r-email').value, 
+        password: document.getElementById('r-pass').value 
+    };
     if(!datos.username || !datos.email || !datos.password) return alert("Llena todos los campos");
     socket.emit('registrar_usuario', datos);
 }
-function abrirModal() {
-    document.getElementById('modal-neon').style.display = 'flex';
-    animarPuntos();
-}
 
-function cerrarModal() {
-    document.getElementById('modal-neon').style.display = 'none';
-    mostrarModo('login'); // Te manda al login después de aceptar
-}
+// EVENTOS SOCKET
+socket.on('connect', () => {
+    document.getElementById('txt-sala').innerText = "Sistema En Línea. Esperando Login...";
+});
 
-function animarPuntos() {
-    const canvas = document.getElementById('canvas-animacion');
-    const ctx = canvas.getContext('2d');
-    let x = 0;
-
-    function frame() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Punto objetivo (rojo)
-        ctx.fillStyle = 'red';
-        ctx.beginPath(); ctx.arc(80, 50, 5, 0, Math.PI * 2); ctx.fill();
-        
-        // Punto guerrero (verde)
-        ctx.fillStyle = '#0f0';
-        ctx.beginPath(); ctx.arc(x, 50, 6, 0, Math.PI * 2); ctx.fill();
-        
-        if (x < 80) {
-            x += 2;
-            requestAnimationFrame(frame);
-        } else {
-            // Explosión simple al eliminar
-            ctx.fillStyle = 'white';
-            ctx.beginPath(); ctx.arc(80, 50, 15, 0, Math.PI * 2); ctx.fill();
-        }
+socket.on('login_resultado', d => {
+    if(d.exito) {
+        document.getElementById('form-login').style.display = 'none';
+        document.getElementById('form-registro').style.display = 'none';
+        document.querySelector('.form-container h1').innerText = "¡PREPÁRATE!";
+    } else {
+        alert("Error de acceso. Revisa tus credenciales.");
     }
-    frame();
-}
+});
+
 socket.on('registro_resultado', d => {
-    if(d.exito) { abrirModal(); mostrarModo('login'); }
-    else alert("Error: El usuario o correo ya existen.");
+    if(d.exito) { alert("¡Cuenta creada! Ya puedes iniciar sesión."); mostrarModo('login'); }
+    else alert("El usuario o correo ya existen.");
 });
 
 socket.on('actualizar_sala', d => {
-    document.getElementById('txt-sala').innerText = `Jugadores en lobby: ${d.total}`;
+    document.getElementById('txt-sala').innerText = `Jugadores Listos: ${d.total}`;
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
@@ -246,6 +170,21 @@ socket.on('actualizar_zona', d => {
     document.getElementById('timer-val').innerText = d.tiempo;
 });
 
+socket.on('efecto_explosion', d => createExplosion(d.x, d.y));
+
+// LÓGICA DE JUEGO
+function createExplosion(x, y) {
+    for(let i=0; i<20; i++) {
+        particles.push({
+            x, y, 
+            vx: (Math.random()-0.5)*12, 
+            vy: (Math.random()-0.5)*12, 
+            life: 1.0, 
+            color: '#0f0'
+        });
+    }
+}
+
 function handleInput() {
     if(!player.vivo) return;
     let dx = 0, dy = 0;
@@ -253,8 +192,8 @@ function handleInput() {
     if(teclas['ArrowDown'] || teclas['KeyS']) dy = 1;
     if(teclas['ArrowLeft'] || teclas['KeyA']) dx = -1;
     if(teclas['ArrowRight'] || teclas['KeyD']) dx = 1;
-    
     if(teclas['Space']) ejecutarDash();
+
     if(joyX !== 0 || joyY !== 0) { dx = joyX; dy = joyY; }
 
     if(dx !== 0 || dy !== 0) {
@@ -268,10 +207,15 @@ function handleInput() {
             player.angle = Math.atan2(dy, dx);
             player.anim += 0.2;
             player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.35;
+            
+            // Estela
+            if(!trails[socket.id]) trails[socket.id] = [];
+            trails[socket.id].push({x: player.x, y: player.y});
+            if(trails[socket.id].length > 15) trails[socket.id].shift();
         }
-    } else { player.stretch = 1; }
+    }
 
-    // Colisión con Items
+    // Colisiones
     items.forEach(it => {
         if(Math.hypot(player.x - it.x, player.y - it.y) < 35) {
             if(it.type === 'weapon' && !player.hasWeapon) {
@@ -285,27 +229,23 @@ function handleInput() {
         }
     });
 
-    // ATAQUE POR CONTACTO (Si tengo arma)
     if(player.hasWeapon) {
         for(let id in players) {
             if(id !== socket.id) {
                 let p = players[id];
-                if(Math.hypot(player.x - p.x, player.y - p.y) < 30) {
-                    socket.emit('eliminar_jugador', id); // Enviamos señal al server para borrar al otro
-                }
+                if(Math.hypot(player.x - p.x, player.y - p.y) < 40) socket.emit('eliminar_jugador', id);
             }
         }
     }
 
-    // Lógica Daño Zona
+    // Zona
     const dist = Math.hypot(player.x - zona.x, player.y - zona.y);
     if(dist > zona.radio && player.vivo) {
         if(!fueraInterval) {
             let t = 5;
             document.getElementById('aviso-zona').style.display = 'block';
             fueraInterval = setInterval(() => {
-                t--;
-                document.getElementById('count-zona').innerText = t;
+                t--; document.getElementById('count-zona').innerText = t;
                 if(t <= 0) { socket.emit('eliminar_jugador', socket.id); clearInterval(fueraInterval); }
             }, 1000);
         }
@@ -323,7 +263,78 @@ function ejecutarDash() {
     }
 }
 
-// JOYSTICK LÓGICA
+// RENDERIZADO
+function draw() {
+    if(juegoIniciado) handleInput();
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    
+    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
+
+    ctx.save();
+    ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+
+    // Muros neón
+    ctx.shadowBlur = 15; ctx.shadowColor = "#333";
+    ctx.fillStyle = "#1a1a1a"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+    // Estelas
+    for(let id in trails) {
+        ctx.beginPath();
+        ctx.lineWidth = 8;
+        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.1)';
+        trails[id].forEach((p, i) => ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+    }
+
+    // Partículas
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
+        ctx.fillRect(p.x, p.y, 4, 4);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    // Items
+    items.forEach(it => {
+        ctx.shadowBlur = 10; ctx.shadowColor = it.type === 'weapon' ? '#f00' : '#0ff';
+        ctx.fillStyle = it.type === 'weapon' ? '#ff0000' : '#00ffff';
+        ctx.fillRect(it.x, it.y, 22, 22);
+    });
+
+    // Otros Jugadores
+    for(let id in players) {
+        let p = players[id];
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+        ctx.shadowBlur = 10; ctx.shadowColor = p.hasWeapon ? "#f00" : "#555";
+        ctx.fillStyle = p.hasWeapon ? "#f00" : "#555";
+        ctx.beginPath(); ctx.ellipse(0, 0, 15*(p.stretch||1), 13, 0, 0, Math.PI*2); ctx.fill();
+        if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
+        ctx.restore();
+    }
+
+    // Mi Jugador
+    if(player.vivo) {
+        ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
+        ctx.shadowBlur = 20; ctx.shadowColor = player.hasWeapon ? "#f00" : "#0f0";
+        ctx.fillStyle = player.hasWeapon ? "#f00" : "#0f0";
+        ctx.beginPath(); ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
+        if(player.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
+        ctx.restore();
+        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
+    }
+
+    // Zona
+    ctx.shadowBlur = 20; ctx.shadowColor = "red";
+    ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"; ctx.lineWidth = 15;
+    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+}
+
+// JOYSTICK
 const jBase = document.getElementById('joy-base'), jStick = document.getElementById('joy-stick');
 jBase.ontouchmove = e => {
     const t = e.touches[0], r = jBase.getBoundingClientRect();
@@ -335,154 +346,31 @@ jBase.ontouchmove = e => {
 jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
 document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); ejecutarDash(); };
 
-// PANTALLA FINAL RECIBIR
+// RESULTADOS FINALES
 socket.on('has_muerto', (ranking) => {
     player.vivo = false;
     document.getElementById('pantalla-fin').style.display = 'flex';
     document.getElementById('titulo-final').innerText = "ELIMINADO";
     document.getElementById('titulo-final').style.color = "#ff0000";
     document.getElementById('texto-puesto').innerText = "#" + ranking;
-    document.getElementById('subtexto-final').innerText = "Sigue practicando para ser el mejor.";
 });
 
-socket.on('eres_ganador', () => {
+socket.on('eres_ganador', (stats) => {
     document.getElementById('pantalla-fin').style.display = 'flex';
-    document.getElementById('titulo-final').innerText = "¡ERES EL GANADOR DE SOLO UN PUNTO!";
-    document.getElementById('titulo-final').style.color = "#00ff00";
+    document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
+    document.getElementById('titulo-final').style.color = "#0f0";
     document.getElementById('texto-puesto').innerText = "#1";
-    document.getElementById('subtexto-final').innerText = "Has derrotado a todos. ¡Felicidades!";
+    document.getElementById('stats-jugador').innerHTML = `Victorias Totales: ${stats.victorias} | Monedas: ${stats.monedas}`;
 });
 
-// --- NUEVAS VARIABLES DE EFECTOS ---
-let particles = [];
-let trails = {}; // Almacena las estelas de cada jugador
-
-function createExplosion(x, y) {
-    for(let i=0; i<15; i++) {
-        particles.push({
-            x, y, 
-            vx: (Math.random()-0.5)*10, 
-            vy: (Math.random()-0.5)*10, 
-            life: 1.0, 
-            color: '#0f0'
-        });
-    }
-}
-
-// --- ACTUALIZACIÓN DE LA FUNCIÓN DRAW ---
-function draw() {
-    if(juegoIniciado) handleInput();
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    ctx.fillStyle = '#050505'; // Fondo casi negro para que resalte el neón
-    ctx.fillRect(0,0, canvas.width, canvas.height);
-    
-    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
-
-    ctx.save();
-    ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
-
-    // DIBUJAR ESTELAS (TRAILS)
-    for(let id in trails) {
-        ctx.beginPath();
-        ctx.lineWidth = 10;
-        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 0, 0, 0.1)';
-        trails[id].forEach((p, i) => {
-            ctx.lineTo(p.x, p.y);
-        });
-        ctx.stroke();
-        if(trails[id].length > 10) trails[id].shift(); // Limitar largo de estela
-    }
-
-    // DIBUJAR PARTICULAS
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`;
-        ctx.fillRect(p.x, p.y, 4, 4);
-        if(p.life <= 0) particles.splice(i, 1);
-    });
-
-    // MI JUGADOR CON GLOW (RESPLANDOR)
-    if(player.vivo) {
-        ctx.save();
-        ctx.translate(player.x, player.y);
-        ctx.rotate(player.angle);
-        
-        // Sombra de neón
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = player.hasWeapon ? "#ff0000" : "#0f0";
-        
-        ctx.fillStyle = player.hasWeapon ? "#ff0000" : "#0f0";
-        ctx.beginPath(); 
-        ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); 
-        ctx.fill();
-
-        if(player.hasWeapon) {
-            // Arma estilo Sable Láser
-            ctx.fillStyle = "#fff"; // Centro blanco
-            ctx.fillRect(12, -4, 25, 8);
-            ctx.strokeStyle = "#ff0000";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(12, -4, 25, 8);
-        }
-        ctx.restore();
-        
-        // Actualizar mi estela local
-        if(!trails[socket.id]) trails[socket.id] = [];
-        trails[socket.id].push({x: player.x, y: player.y});
-    }
-
-    // ... (resto del dibujo de zona y muros con ctx.shadowBlur para el toque Next Gen)
-    ctx.restore();
-    requestAnimationFrame(draw);
-}
-
-// Escuchar explosiones del server
-socket.on('efecto_explosion', d => createExplosion(d.x, d.y));
-
-    // 1. Muros
-    ctx.fillStyle = "#333"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
-
-    // 2. Items
-    items.forEach(it => {
-        ctx.fillStyle = it.type === 'weapon' ? '#ff0000' : '#00ffff';
-        ctx.fillRect(it.x, it.y, 22, 22);
-    });
-
-    // 3. Otros Jugadores
-    for(let id in players) {
-        let p = players[id];
-        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
-        ctx.fillStyle = p.hasWeapon ? "#ff0000" : "#555";
-        ctx.beginPath(); ctx.ellipse(0, 0, 15*(p.stretch||1), 13, 0, 0, Math.PI*2); ctx.fill();
-        // Mostrar rectángulo si tiene arma
-        if(p.hasWeapon) { ctx.fillStyle = "#ff0000"; ctx.fillRect(12, -6, 20, 12); }
-        ctx.restore();
-    }
-
-    // 4. Mi Jugador
-    if(player.vivo) {
-        ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-        ctx.fillStyle = player.hasWeapon ? "#ff0000" : "#0f0";
-        ctx.beginPath(); ctx.ellipse(0, 0, 15*player.stretch, 13, 0, 0, Math.PI*2); ctx.fill();
-        // DIBUJAR ARMA (RECTÁNGULO)
-        if(player.hasWeapon) {
-            ctx.fillStyle = "#ff0000";
-            ctx.fillRect(12, -6, 20, 12); // El rectángulo rojo pegado al punto
-        }
-        ctx.restore();
-        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon });
-    }
-
-    // 5. Zona
-    ctx.strokeStyle = "rgba(255, 0, 0, 0.5)"; ctx.lineWidth = 20;
-    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
-
-    ctx.restore();
-    requestAnimationFrame(draw);
-}
 draw();
-socket.on('playerMoved', d => players[d.id] = d);
-socket.on('playerDisconnected', id => delete players[id]);
+socket.on('playerMoved', d => {
+    players[d.id] = d;
+    if(!trails[d.id]) trails[d.id] = [];
+    trails[d.id].push({x: d.x, y: d.y});
+    if(trails[d.id].length > 15) trails[d.id].shift();
+});
+socket.on('playerDisconnected', id => { delete players[id]; delete trails[id]; });
 socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
 </script>
 </body>
