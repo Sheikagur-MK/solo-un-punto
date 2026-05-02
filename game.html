@@ -69,10 +69,50 @@
     75%  { top: 100%; left: 0; transform: translateY(-100%); }
     100% { top: 0; left: 0; }
   }
+        .modal-overlay {
+    display: none; /* Escondido por defecto */
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: #000;
+    border: 2px solid #0f0;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 0 20px #0f0, inset 0 0 10px #0f0;
+    font-family: 'Courier New', Courier, monospace;
+    color: #0f0;
+    max-width: 400px;
+}
+
+.canvas-container {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 20px;
+}
+
+.modal-content h2 {
+    text-shadow: 0 0 10px #0f0;
+    letter-spacing: 2px;
+}
 </style>
 </head>
 <body>
-    
+   <div id="modal-neon" class="modal-overlay">
+    <div class="modal-content">
+        <div class="canvas-container">
+            <canvas id="canvas-animacion"></canvas>
+        </div>
+        <h2>¡LISTO GUERRERO!</h2>
+        <p>AHORA A LA BATALLA</p>
+        <button onclick="cerrarModal()" class="btn-animado">ACEPTAR</button>
+    </div>
+</div> 
     <div id="ui-info">FASE: <span id="fase-val">1</span>/4 | CIERRE EN: <span id="timer-val">120</span>s</div>
     <div id="aviso-zona">¡FUERA DE LA ZONA!<br><span id="count-zona">5</span>s</div>
     <div id="dash-count">DASH: 0</div>
@@ -147,9 +187,45 @@ function registro() {
     if(!datos.username || !datos.email || !datos.password) return alert("Llena todos los campos");
     socket.emit('registrar_usuario', datos);
 }
+function abrirModal() {
+    document.getElementById('modal-neon').style.display = 'flex';
+    animarPuntos();
+}
 
+function cerrarModal() {
+    document.getElementById('modal-neon').style.display = 'none';
+    mostrarModo('login'); // Te manda al login después de aceptar
+}
+
+function animarPuntos() {
+    const canvas = document.getElementById('canvas-animacion');
+    const ctx = canvas.getContext('2d');
+    let x = 0;
+
+    function frame() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Punto objetivo (rojo)
+        ctx.fillStyle = 'red';
+        ctx.beginPath(); ctx.arc(80, 50, 5, 0, Math.PI * 2); ctx.fill();
+        
+        // Punto guerrero (verde)
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath(); ctx.arc(x, 50, 6, 0, Math.PI * 2); ctx.fill();
+        
+        if (x < 80) {
+            x += 2;
+            requestAnimationFrame(frame);
+        } else {
+            // Explosión simple al eliminar
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(80, 50, 15, 0, Math.PI * 2); ctx.fill();
+        }
+    }
+    frame();
+}
 socket.on('registro_resultado', d => {
-    if(d.exito) { alert("¡Cuenta creada! Inicia sesión."); mostrarModo('login'); }
+    if(d.exito) { abrirModal(); mostrarModo('login'); }
     else alert("Error: El usuario o correo ya existen.");
 });
 
