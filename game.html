@@ -4,31 +4,36 @@
     <meta charset="UTF-8">
     <title>Solo un Punto - HG</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; color: #0f0; font-family: 'Courier New', monospace; }
-        canvas { display: block; }
-        #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 20; }
-        .box { border: 2px solid #0f0; padding: 20px; text-align: center; background: #050505; }
-        input { background: #000; border: 1px solid #0f0; color: #0f0; padding: 10px; margin: 10px 0; width: 200px; }
-        button { background: #0f0; color: #000; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; }
-        #stats { position: fixed; top: 10px; left: 10px; z-index: 10; display: none; }
+        body { margin: 0; background: #000; color: #0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+        #gui { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 100; background: rgba(0,0,0,0.8); }
+        .window { border: 2px solid #0f0; padding: 40px; background: #0a0a0a; text-align: center; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
+        input { display: block; margin: 15px auto; padding: 12px; background: #000; border: 1px solid #0f0; color: #0f0; width: 250px; }
+        button { padding: 12px 30px; background: #0f0; color: #000; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        button:hover { background: #0a0; }
+        #hud { position: fixed; top: 20px; left: 20px; font-weight: bold; text-shadow: 0 0 5px #0f0; display: none; }
     </style>
 </head>
 <body>
-    <div id="stats">SISTEMA ONLINE</div>
-    <div id="overlay">
-        <div class="box" id="auth-ui">
-            <h2>ACCESO AL SISTEMA</h2>
-            <input type="email" id="email" placeholder="EMAIL">
-            <input type="password" id="pass" placeholder="PASSWORD">
-            <br>
-            <button onclick="conectar()">INGRESAR</button>
+    <div id="hud">ZONA ESTABLE</div>
+    
+    <div id="gui">
+        <!-- Menú de Login -->
+        <div id="login-box" class="window">
+            <h1 style="letter-spacing: 5px;">SOLO UN PUNTO</h1>
+            <input type="email" id="email" placeholder="CORREO ELECTRÓNICO">
+            <input type="password" id="pass" placeholder="CONTRASEÑA">
+            <button onclick="intentarLogin()">ACCEDER</button>
         </div>
-        <div class="box" id="lobby-ui" style="display:none;">
-            <h2>SALA DE ESPERA</h2>
-            <p id="player-count">CONEXIONES: 0</p>
-            <button id="start-btn" style="display:none;" onclick="socket.emit('solicitar_inicio_partida')">INICIAR</button>
+
+        <!-- Sala de Espera -->
+        <div id="lobby-box" class="window" style="display:none;">
+            <h2 id="welcome-msg">BIENVENIDO</h2>
+            <p id="counter">CONECTADOS: 1</p>
+            <p style="font-size: 0.8em; color: #0a0;">ESPERANDO AL ANFITRIÓN...</p>
+            <button id="start-btn" style="display:none;" onclick="empezar()">INICIAR PARTIDA</button>
         </div>
     </div>
+
     <canvas id="gameCanvas"></canvas>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -37,15 +42,13 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, vx: 0, vy: 0 };
+let player = { x: 2500, y: 2500, vx: 0, vy: 0, r: 15 };
 let players = {};
 let walls = [];
-let zona = { radio: 2500 };
-let cam = { x: 2500, y: 2500 };
 let activo = false;
 const keys = {};
 
-function conectar() {
+function intentarLogin() {
     socket.emit('login_usuario', { 
         email: document.getElementById('email').value, 
         password: document.getElementById('pass').value 
@@ -54,80 +57,70 @@ function conectar() {
 
 socket.on('login_resultado', d => {
     if(d.exito) {
-        document.getElementById('auth-ui').style.display = 'none';
-        document.getElementById('lobby-ui').style.display = 'block';
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('lobby-box').style.display = 'block';
+        document.getElementById('welcome-msg').innerText = `OPERATIVO: ${d.username}`;
     }
 });
 
 socket.on('actualizar_sala', d => {
-    document.getElementById('player-count').innerText = `CONEXIONES: ${d.total}`;
+    document.getElementById('counter').innerText = `CONECTADOS: ${d.total}`;
     document.getElementById('start-btn').style.display = (socket.id === d.hostId) ? 'block' : 'none';
 });
 
-socket.on('iniciar_partida', data => {
-    walls = data.walls;
-    zona = data.zona;
+socket.on('iniciar_partida', d => {
+    walls = d.walls;
     activo = true;
-    document.getElementById('overlay').style.display = 'none';
-    document.getElementById('stats').style.display = 'block';
+    document.getElementById('gui').style.display = 'none';
+    document.getElementById('hud').style.display = 'block';
 });
 
-socket.on('playerMoved', d => players[d.id] = d);
-socket.on('actualizar_zona', d => zona = d.zona);
-
-function update() {
-    if(!activo) return;
-    if(keys['w']) player.vy -= 0.7;
-    if(keys['s']) player.vy += 0.7;
-    if(keys['a']) player.vx -= 0.7;
-    if(keys['d']) player.vx += 0.7;
-
-    player.vx *= 0.95;
-    player.vy *= 0.95;
-    player.x += player.vx;
-    player.y += player.vy;
-
-    cam.x += (player.x - cam.x) * 0.1;
-    cam.y += (player.y - cam.y) * 0.1;
-
-    socket.emit('move', { x: player.x, y: player.y });
+function empezar() {
+    socket.emit('solicitar_inicio_partida');
 }
+
+socket.on('playerMoved', d => players[d.id] = d);
 
 function loop() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    update();
-
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if(activo) {
+        // Movimiento suave
+        if(keys['w']) player.vy -= 0.8; if(keys['s']) player.vy += 0.8;
+        if(keys['a']) player.vx -= 0.8; if(keys['d']) player.vx += 0.8;
+        player.vx *= 0.9; player.vy *= 0.9;
+        player.x += player.vx; player.y += player.vy;
+        socket.emit('move', { x: player.x, y: player.y });
+
         ctx.save();
-        ctx.translate(canvas.width/2 - cam.x, canvas.height/2 - cam.y);
+        ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
 
-        // Muros neón
-        ctx.strokeStyle = '#0f0';
-        ctx.lineWidth = 2;
-        walls.forEach(w => {
-            ctx.strokeRect(w.x, w.y, w.w, w.h);
-        });
+        // Fondo y rejilla
+        ctx.strokeStyle = '#020';
+        for(let i=0; i<=5000; i+=200) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,5000); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(5000,i); ctx.stroke();
+        }
 
-        // Otros
+        // Dibujar muros
+        ctx.fillStyle = '#050';
+        walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+        // Otros jugadores
         ctx.fillStyle = '#f00';
         for(let id in players) {
             ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 15, 0, Math.PI*2); ctx.fill();
         }
 
-        // Usuario local
+        // Jugador local
         ctx.fillStyle = '#0f0';
+        ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
         ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill();
-
-        // Cierre de zona
-        ctx.strokeStyle = '#f00';
-        ctx.beginPath(); ctx.arc(2500, 2500, zona.radio, 0, Math.PI*2); ctx.stroke();
 
         ctx.restore();
     }
+
     requestAnimationFrame(loop);
 }
 
