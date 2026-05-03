@@ -76,7 +76,7 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Variables de Juego
+// Variables de Juego inicializadas[cite: 3, 6]
 let player = { x: 2500, y: 2500, type: 'circulo', vivo: true, angle: 0 };
 let players = {};
 let items = [];
@@ -105,36 +105,48 @@ socket.on('login_resultado', d => {
         document.getElementById('seccion-auth').style.display = 'none';
         document.getElementById('menu-principal').style.display = 'block';
         document.getElementById('display-user').innerText = d.username;
+        document.getElementById('val-monedas').innerText = d.monedas || 0;
+        document.getElementById('val-victorias').innerText = d.victorias || 0;
     }
 });
 
+// Corrección aplicada al evento de inicio[cite: 3, 6]
 socket.on('iniciar_partida', data => {
+    console.log("Datos de partida recibidos:", data); 
+    
+    // 1. Cargar datos esenciales
     items = data.items;
     walls = data.walls;
     zona = data.zona;
+    
+    // 2. Activar motor de renderizado y ocultar UI[cite: 3]
     juegoIniciado = true;
-    document.getElementById('pantalla-inicio').style.display = 'none';
+    const pantallaInicio = document.getElementById('pantalla-inicio');
+    if (pantallaInicio) {
+        pantallaInicio.style.display = 'none';
+    }
+    
+    // 3. Reset local del jugador
+    player.vivo = true;
+    player.x = 2500;
+    player.y = 2500;
 });
+
 socket.on('actualizar_sala', d => {
-    // Actualiza el contador de jugadores en el menú
     const txtSala = document.getElementById('txt-sala');
     if (txtSala) txtSala.innerText = `JUGADORES EN SALA: ${d.total}`;
     
-    // Solo el Host ve el botón de inicio
     const btnStart = document.getElementById('btn-start');
     if (btnStart) {
-        if (socket.id === d.hostId) {
-            btnStart.style.display = 'block';
-        } else {
-            btnStart.style.display = 'none';
-        }
+        btnStart.style.display = (socket.id === d.hostId) ? 'block' : 'none';
     }
 });
+
 socket.on('actualizar_zona', data => { zona = data.zona; });
 socket.on('playerMoved', data => { players[data.id] = data; });
 socket.on('playerDisconnected', id => { delete players[id]; });
 
-// --- RENDERIZADO (RECUPERADO) ---
+// --- RENDERIZADO ---
 function drawPlayer(p, isMe) {
     ctx.save();
     ctx.translate(p.x, p.y);
@@ -156,17 +168,16 @@ function draw() {
     canvas.width = window.innerWidth; 
     canvas.height = window.innerHeight;
     
-    // Fondo negro base
     ctx.fillStyle = '#050505'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     if (juegoIniciado) {
         ctx.save();
         
-        // 1. CÁMARA: Centrar en tu posición
+        // 1. CÁMARA centrada en el jugador[cite: 6]
         ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-        // 2. DIBUJAR PISO (Cuadrícula para referencia visual)
+        // 2. DIBUJAR PISO (Cuadrícula)[cite: 6]
         ctx.strokeStyle = "#111";
         ctx.lineWidth = 1;
         for (let i = 0; i <= 5000; i += 100) {
@@ -174,33 +185,28 @@ function draw() {
             ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(5000, i); ctx.stroke();
         }
 
-        // 3. DIBUJAR MUROS (Los que vienen del servidor)
-        ctx.fillStyle = "#222"; // Color gris oscuro para las paredes
-        ctx.strokeStyle = "#0f0"; // Borde verde neón
+        // 3. DIBUJAR MUROS[cite: 6]
+        ctx.fillStyle = "#222"; 
+        ctx.strokeStyle = "#0f0"; 
         ctx.lineWidth = 2;
         walls.forEach(w => {
             ctx.fillRect(w.x, w.y, w.w, w.h);
             ctx.strokeRect(w.x, w.y, w.w, w.h);
         });
 
-        // 4. DIBUJAR ÍTEMS
+        // 4. DIBUJAR ÍTEMS[cite: 6]
         items.forEach(it => {
             ctx.fillStyle = it.type === 'weapon' ? '#ff0' : '#0ff';
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = ctx.fillStyle;
             ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI * 2); ctx.fill();
-            ctx.shadowBlur = 0;
         });
 
-        // 5. OTROS JUGADORES
+        // 5. OTROS JUGADORES Y LOCAL[cite: 6]
         for (let id in players) {
             if (id !== socket.id) drawPlayer(players[id], false);
         }
-
-        // 6. MI JUGADOR
         if (player.vivo) drawPlayer(player, true);
 
-        // 7. LA ZONA (Círculo rojo)
+        // 6. LA ZONA[cite: 6]
         ctx.strokeStyle = "red";
         ctx.lineWidth = 5;
         ctx.beginPath(); 
@@ -208,22 +214,23 @@ function draw() {
         ctx.stroke();
 
         ctx.restore();
-    } else {
-        // Si no ha iniciado, puedes poner aquí la animación de guerreros peleando
-        actualizarFondo(); 
     }
     
     requestAnimationFrame(draw);
 }
 draw();
 
-// Movimiento básico para probar
+// Movimiento básico
 window.addEventListener('keydown', e => {
-    if(e.key === 'w') player.y -= 10;
-    if(e.key === 's') player.y += 10;
-    if(e.key === 'a') player.x -= 10;
-    if(e.key === 'd') player.x += 10;
-    socket.emit('move', player);
+    const speed = 15;
+    if(e.key === 'w') player.y -= speed;
+    if(e.key === 's') player.y += speed;
+    if(e.key === 'a') player.x -= speed;
+    if(e.key === 'd') player.x += speed;
+    
+    if(juegoIniciado) {
+        socket.emit('move', player);
+    }
 });
 </script>
 </body>
