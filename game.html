@@ -139,35 +139,66 @@ function drawPlayer(p, isMe) {
 }
 
 function draw() {
-    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
+    canvas.width = window.innerWidth; 
+    canvas.height = window.innerHeight;
+    
+    // Fondo negro base
+    ctx.fillStyle = '#050505'; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    if(juegoIniciado) {
+    if (juegoIniciado) {
         ctx.save();
-        // Cámara centrada en el jugador
-        ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+        
+        // 1. CÁMARA: Centrar en tu posición
+        ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-        // Muros
-        ctx.fillStyle = "#222";
-        walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+        // 2. DIBUJAR PISO (Cuadrícula para referencia visual)
+        ctx.strokeStyle = "#111";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5000; i += 100) {
+            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 5000); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(5000, i); ctx.stroke();
+        }
 
-        // Ítems (con su nueva separación)
-        items.forEach(it => {
-            ctx.fillStyle = it.type === 'weapon' ? '#ff0' : '#0ff';
-            ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI*2); ctx.fill();
+        // 3. DIBUJAR MUROS (Los que vienen del servidor)
+        ctx.fillStyle = "#222"; // Color gris oscuro para las paredes
+        ctx.strokeStyle = "#0f0"; // Borde verde neón
+        ctx.lineWidth = 2;
+        walls.forEach(w => {
+            ctx.fillRect(w.x, w.y, w.w, w.h);
+            ctx.strokeRect(w.x, w.y, w.w, w.h);
         });
 
-        // Otros jugadores
-        for(let id in players) drawPlayer(players[id], false);
-        
-        // Mi jugador
-        if(player.vivo) drawPlayer(player, true);
+        // 4. DIBUJAR ÍTEMS
+        items.forEach(it => {
+            ctx.fillStyle = it.type === 'weapon' ? '#ff0' : '#0ff';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = ctx.fillStyle;
+            ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI * 2); ctx.fill();
+            ctx.shadowBlur = 0;
+        });
 
-        // Zona radioactiva
-        ctx.strokeStyle = "red"; ctx.lineWidth = 5;
-        ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
+        // 5. OTROS JUGADORES
+        for (let id in players) {
+            if (id !== socket.id) drawPlayer(players[id], false);
+        }
+
+        // 6. MI JUGADOR
+        if (player.vivo) drawPlayer(player, true);
+
+        // 7. LA ZONA (Círculo rojo)
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 5;
+        ctx.beginPath(); 
+        ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI * 2); 
+        ctx.stroke();
+
         ctx.restore();
+    } else {
+        // Si no ha iniciado, puedes poner aquí la animación de guerreros peleando
+        actualizarFondo(); 
     }
+    
     requestAnimationFrame(draw);
 }
 draw();
