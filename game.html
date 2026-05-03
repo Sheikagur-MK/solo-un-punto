@@ -115,7 +115,21 @@ socket.on('iniciar_partida', data => {
     juegoIniciado = true;
     document.getElementById('pantalla-inicio').style.display = 'none';
 });
-
+socket.on('actualizar_sala', d => {
+    // Actualiza el contador de jugadores en el menú
+    const txtSala = document.getElementById('txt-sala');
+    if (txtSala) txtSala.innerText = `JUGADORES EN SALA: ${d.total}`;
+    
+    // Solo el Host ve el botón de inicio
+    const btnStart = document.getElementById('btn-start');
+    if (btnStart) {
+        if (socket.id === d.hostId) {
+            btnStart.style.display = 'block';
+        } else {
+            btnStart.style.display = 'none';
+        }
+    }
+});
 socket.on('actualizar_zona', data => { zona = data.zona; });
 socket.on('playerMoved', data => { players[data.id] = data; });
 socket.on('playerDisconnected', id => { delete players[id]; });
