@@ -3,68 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Solo un Punto - HG Studios V2.0</title>
+    <title>Solo un Punto: NEON REVOLUTION</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; touch-action: none; font-family: 'Segoe UI', sans-serif; }
-        canvas { display: block; position: fixed; top: 0; left: 0; z-index: 1; }
-
-        /* INTERFAZ */
-        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, rgba(26,26,26,0.8) 0%, rgba(0,0,0,0.9) 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .form-container { background: rgba(15, 15, 15, 0.95); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 450px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
-        
-        .logo-hg { color: #f00; font-weight: bold; border: 1px solid #f00; padding: 2px 10px; font-size: 0.9em; margin-bottom: 10px; display: inline-block; }
-        input { width: 90%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; }
-        button { cursor: pointer; border-radius: 8px; font-weight: bold; border: none; padding: 10px; margin: 5px; }
-
-        /* MENÚ */
-        #menu-principal { display: none; width: 100%; }
-        .grid-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .opcion-card { background: #111; border: 2px solid #0f0; border-radius: 12px; padding: 15px; cursor: pointer; color: #fff; }
-        .opcion-card:hover { background: #0f0; color: #000; }
-        .full-width { grid-column: span 2; background: #0f0; color: #000; }
-        .sub-menu { display: none; width: 100%; margin-top: 15px; }
-        .stats-top { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; color: #0ff; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; }
+        canvas { display: block; filter: contrast(1.2) brightness(1.1); }
+        .pantalla { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .form-container { background: #0a0a0a; padding: 40px; border-radius: 5px; border-left: 5px solid #0f0; width: 90%; max-width: 400px; color: #0f0; box-shadow: -20px 0 50px rgba(0,255,0,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #333; color: #0f0; box-sizing: border-box; }
+        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #0f0; color: #000; border: none; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
+        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; }
+        #menu-principal { display: none; }
+        .stats-top { display: flex; justify-content: space-between; font-size: 0.8em; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
+        .opcion-card { border: 1px solid #333; padding: 15px; margin: 5px 0; cursor: pointer; text-align: center; }
+        .opcion-card:hover { border-color: #0f0; color: #fff; }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
 
     <div id="pantalla-inicio" class="pantalla">
-        <div class="form-container"> 
-            <div class="logo-hg">HG STUDIOS V2.0</div>
-            <h1 id="titulo-dinamico" style="color:#0f0; margin: 5px 0 10px;">SOLO UN PUNTO</h1>
-            
+        <div class="form-container">
+            <h2 style="letter-spacing: 5px;">SOLO UN PUNTO</h2>
             <div id="seccion-auth">
-                <button onclick="mostrarModo('login')" style="background:#222; color:#0f0;">ENTRAR</button>
-                <button onclick="mostrarModo('registro')" style="background:#222; color:#0f0;">REGISTRO</button>
                 <div id="form-login">
-                    <input type="email" id="l-email" placeholder="Correo">
-                    <input type="password" id="l-pass" placeholder="Contraseña">
-                    <button onclick="login()" style="width:100%; background:#0f0; color:#000;">ACCEDER</button>
-                </div>
-                <div id="form-registro" style="display:none;">
-                    <input type="text" id="r-user" placeholder="Guerrero">
-                    <input type="email" id="r-email" placeholder="Correo">
-                    <input type="password" id="r-pass" placeholder="Contraseña">
-                    <button onclick="registro()" style="width:100%; background:#00ffff; color:#000;">CREAR CUENTA</button>
+                    <input type="email" id="l-email" placeholder="CYBER-MAIL">
+                    <input type="password" id="l-pass" placeholder="ACCESS-KEY">
+                    <button onclick="login()">ESTABLISH CONNECTION</button>
                 </div>
             </div>
-
             <div id="menu-principal">
                 <div class="stats-top">
-                    <span id="display-user">PLAYER</span>
-                    <span>💰 <span id="val-monedas">0</span></span>
-                    <span>🏆 <span id="val-victorias">0</span></span>
+                    <span id="display-user">GUEST</span>
+                    <span>$ <span id="val-monedas">0</span></span>
                 </div>
-                <div id="menu-grid" class="grid-opciones">
-                    <div class="opcion-card full-width" onclick="navegarA('lobby')">🎮 INICIAR PARTIDA</div>
-                    <div class="opcion-card" onclick="navegarA('personajes')">👤 GUERREROS</div>
-                    <div class="opcion-card" onclick="navegarA('tienda')">🛒 TIENDA</div>
-                    <div class="opcion-card" onclick="navegarA('sala')">🏠 SALA</div>
-                </div>
-                <div id="sub-lobby" class="sub-menu">
-                    <p id="txt-sala">Buscando jugadores...</p>
-                    <button id="btn-start" style="display:none; background:#f0f; color:#fff; width:100%;" onclick="socket.emit('solicitar_inicio_partida')">¡EMPEZAR!</button>
+                <div id="menu-grid">
+                    <div class="opcion-card" style="background:#0f0; color:#000;" onclick="navegarA('lobby')">SYNC TO MATCH</div>
+                    <div id="sub-lobby" style="display:none; margin-top:15px;">
+                        <p id="txt-sala">WAITING FOR SQUAD...</p>
+                        <button id="btn-start" style="display:none;" onclick="socket.emit('solicitar_inicio_partida')">INITIATE COMBAT</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -76,162 +54,147 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// Variables de Juego inicializadas[cite: 3, 6]
-let player = { x: 2500, y: 2500, type: 'circulo', vivo: true, angle: 0 };
+let player = { x: 2500, y: 2500, vx:0, vy:0, angle: 0, vivo: true };
+let cam = { x: 2500, y: 2500 };
 let players = {};
 let items = [];
 let walls = [];
+let particles = [];
 let zona = { x: 2500, y: 2500, radio: 2500 };
 let juegoIniciado = false;
+const keys = {};
 
-// --- LÓGICA DE MENÚ ---
-function mostrarModo(m) {
-    document.getElementById('form-login').style.display = m === 'login' ? 'block' : 'none';
-    document.getElementById('form-registro').style.display = m === 'registro' ? 'block' : 'none';
-}
-function navegarA(s) {
-    document.getElementById('menu-grid').style.display = 'none';
-    document.getElementById('sub-' + s).style.display = 'block';
-}
 function login() {
     const email = document.getElementById('l-email').value;
     const pass = document.getElementById('l-pass').value;
-    if(email && pass) socket.emit('login_usuario', { email, password: pass });
+    socket.emit('login_usuario', { email, password: pass });
 }
 
-// --- RECEPCIÓN DE DATOS DEL SERVIDOR ---
+function navegarA(s) {
+    document.getElementById('sub-' + s).style.display = 'block';
+}
+
 socket.on('login_resultado', d => {
     if(d.exito) {
         document.getElementById('seccion-auth').style.display = 'none';
         document.getElementById('menu-principal').style.display = 'block';
         document.getElementById('display-user').innerText = d.username;
-        document.getElementById('val-monedas').innerText = d.monedas || 0;
-        document.getElementById('val-victorias').innerText = d.victorias || 0;
     }
-});
-
-// Corrección aplicada al evento de inicio[cite: 3, 6]
-socket.on('iniciar_partida', data => {
-    console.log("Datos de partida recibidos:", data); 
-    
-    // 1. Cargar datos esenciales
-    items = data.items;
-    walls = data.walls;
-    zona = data.zona;
-    
-    // 2. Activar motor de renderizado y ocultar UI[cite: 3]
-    juegoIniciado = true;
-    const pantallaInicio = document.getElementById('pantalla-inicio');
-    if (pantallaInicio) {
-        pantallaInicio.style.display = 'none';
-    }
-    
-    // 3. Reset local del jugador
-    player.vivo = true;
-    player.x = 2500;
-    player.y = 2500;
 });
 
 socket.on('actualizar_sala', d => {
-    const txtSala = document.getElementById('txt-sala');
-    if (txtSala) txtSala.innerText = `JUGADORES EN SALA: ${d.total}`;
-    
-    const btnStart = document.getElementById('btn-start');
-    if (btnStart) {
-        btnStart.style.display = (socket.id === d.hostId) ? 'block' : 'none';
-    }
+    document.getElementById('txt-sala').innerText = `CONNECTIVES: ${d.total}`;
+    document.getElementById('btn-start').style.display = (socket.id === d.hostId) ? 'block' : 'none';
 });
 
-socket.on('actualizar_zona', data => { zona = data.zona; });
-socket.on('playerMoved', data => { players[data.id] = data; });
-socket.on('playerDisconnected', id => { delete players[id]; });
+socket.on('iniciar_partida', data => {
+    items = data.items;
+    walls = data.walls;
+    zona = data.zona;
+    juegoIniciado = true;
+    document.getElementById('pantalla-inicio').style.display = 'none';
+});
 
-// --- RENDERIZADO ---
-function drawPlayer(p, isMe) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    ctx.rotate(p.angle || 0);
-    ctx.fillStyle = isMe ? "#0f0" : "#f00";
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = ctx.fillStyle;
-    
-    if(p.type === 'cuadrado') ctx.fillRect(-15, -15, 30, 30);
-    else if(p.type === 'triangulo') {
-        ctx.beginPath(); ctx.moveTo(18,0); ctx.lineTo(-12,12); ctx.lineTo(-12,-12); ctx.fill();
-    } else {
-        ctx.beginPath(); ctx.arc(0,0, 15, 0, Math.PI*2); ctx.fill();
-    }
-    ctx.restore();
+socket.on('playerMoved', d => { players[d.id] = d; });
+socket.on('actualizar_zona', d => { zona = d.zona; });
+socket.on('efecto_explosion', d => {
+    for(let i=0; i<20; i++) particles.push({x: d.x, y: d.y, vx: Math.random()*10-5, vy: Math.random()*10-5, life: 1, c: '#f00'});
+});
+
+function update() {
+    if(!juegoIniciado) return;
+
+    // Movimiento con Inercia 2026[cite: 8]
+    const accel = 0.8;
+    const friction = 0.92;
+    if(keys['w'] || keys['ArrowUp']) player.vy -= accel;
+    if(keys['s'] || keys['ArrowDown']) player.vy += accel;
+    if(keys['a'] || keys['ArrowLeft']) player.vx -= accel;
+    if(keys['d'] || keys['ArrowRight']) player.vx += accel;
+
+    player.vx *= friction;
+    player.vy *= friction;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // Smooth Camera[cite: 8]
+    cam.x += (player.x - cam.x) * 0.1;
+    cam.y += (player.y - cam.y) * 0.1;
+
+    socket.emit('move', player);
 }
 
 function draw() {
-    canvas.width = window.innerWidth; 
+    canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    
-    ctx.fillStyle = '#050505'; 
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    update();
 
-    if (juegoIniciado) {
-        ctx.save();
-        
-        // 1. CÁMARA centrada en el jugador[cite: 6]
-        ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
+    if(!juegoIniciado) {
+        ctx.fillStyle = '#050505';
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+        requestAnimationFrame(draw);
+        return;
+    }
 
-        // 2. DIBUJAR PISO (Cuadrícula)[cite: 6]
-        ctx.strokeStyle = "#111";
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 5000; i += 100) {
-            ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 5000); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(5000, i); ctx.stroke();
-        }
+    ctx.save();
+    ctx.translate(canvas.width/2 - cam.x, canvas.height/2 - cam.y);
 
-        // 3. DIBUJAR MUROS[cite: 6]
-        ctx.fillStyle = "#222"; 
-        ctx.strokeStyle = "#0f0"; 
-        ctx.lineWidth = 2;
-        walls.forEach(w => {
-            ctx.fillRect(w.x, w.y, w.w, w.h);
-            ctx.strokeRect(w.x, w.y, w.w, w.h);
-        });
+    // Fondo Tech
+    ctx.strokeStyle = '#111';
+    for(let i=0; i<=5000; i+=250) {
+        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,5000); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(5000,i); ctx.stroke();
+    }
 
-        // 4. DIBUJAR ÍTEMS[cite: 6]
-        items.forEach(it => {
-            ctx.fillStyle = it.type === 'weapon' ? '#ff0' : '#0ff';
-            ctx.beginPath(); ctx.arc(it.x, it.y, 8, 0, Math.PI * 2); ctx.fill();
-        });
+    // Muros Neon
+    walls.forEach(w => {
+        ctx.fillStyle = '#0a0a0a';
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#0f0';
+        ctx.fillRect(w.x, w.y, w.w, w.h);
+        ctx.strokeRect(w.x, w.y, w.w, w.h);
+    });
 
-        // 5. OTROS JUGADORES Y LOCAL[cite: 6]
-        for (let id in players) {
-            if (id !== socket.id) drawPlayer(players[id], false);
-        }
-        if (player.vivo) drawPlayer(player, true);
+    // Items
+    items.forEach(it => {
+        ctx.fillStyle = '#0ff';
+        ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(it.x, it.y, 10, 0, Math.PI*2); ctx.fill();
+    });
 
-        // 6. LA ZONA[cite: 6]
-        ctx.strokeStyle = "red";
-        ctx.lineWidth = 5;
-        ctx.beginPath(); 
-        ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI * 2); 
-        ctx.stroke();
-
-        ctx.restore();
+    // Players
+    for(let id in players) {
+        ctx.fillStyle = '#f00';
+        ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 15, 0, Math.PI*2); ctx.fill();
     }
     
+    ctx.fillStyle = '#0f0';
+    ctx.shadowColor = '#0f0';
+    ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill();
+
+    // Zona de Muerte
+    ctx.strokeStyle = '#f00';
+    ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
+
+    // Partículas
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.fillStyle = p.c;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 4, 4);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    ctx.restore();
     requestAnimationFrame(draw);
 }
-draw();
 
-// Movimiento básico
-window.addEventListener('keydown', e => {
-    const speed = 15;
-    if(e.key === 'w') player.y -= speed;
-    if(e.key === 's') player.y += speed;
-    if(e.key === 'a') player.x -= speed;
-    if(e.key === 'd') player.x += speed;
-    
-    if(juegoIniciado) {
-        socket.emit('move', player);
-    }
-});
+window.onkeydown = e => keys[e.key] = true;
+window.onkeyup = e => keys[e.key] = false;
+draw();
 </script>
 </body>
 </html>
