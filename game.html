@@ -16,36 +16,33 @@
 
         .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 500px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
         
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; }
+        button { cursor: pointer; transition: 0.3s; border-radius: 8px; font-weight: bold; text-transform: uppercase; border: none; }
+
         /* SISTEMA DE MENÚ */
         #menu-principal { display: none; width: 100%; }
         .grid-opciones { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         
         .opcion-card { background: #111; border: 2px solid #0f0; border-radius: 15px; padding: 20px; cursor: pointer; transition: 0.3s; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
         .opcion-card:hover { background: #0f0; color: #000; box-shadow: 0 0 20px #0f0; transform: translateY(-5px); }
-        .opcion-card i { font-size: 1.5em; }
         .full-width { grid-column: span 2; background: #0f0; color: #000; font-size: 1.2em; font-weight: bold; }
 
-        /* SUB-MENÚS (TIENDA, PERSONAJES, ETC) */
+        /* SUB-MENÚS */
         .sub-menu { display: none; width: 100%; margin-top: 15px; }
         .btn-volver { background: #333; color: #fff; margin-top: 15px; padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        .btn-logout { background: transparent; color: #f00; border: 1px solid #f00; padding: 5px 15px; font-size: 0.7em; margin-top: 20px; }
+        .btn-logout:hover { background: #f00; color: #fff; }
 
-        /* LOBBY Y SALA */
-        .sala-info { background: rgba(0,255,0,0.1); border: 1px dashed #0f0; padding: 10px; border-radius: 10px; margin: 15px 0; font-size: 0.9em; }
-        .stats-top { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; color: #0ff; }
+        /* LOBBY Y STATS */
+        .stats-top { display: flex; justify-content: space-between; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 15px; color: #0ff; font-size: 0.9em; }
 
-        /* ESTILOS DE PERSONAJES */
+        /* PERSONAJES */
         .grid-pj { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; }
-        .card-pj.selected { border-color: #0f0; box-shadow: 0 0 15px #0f0; background: #030; }
+        .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; font-size: 0.7em; }
+        .card-pj.selected { border-color: #0f0; background: #030; box-shadow: 0 0 15px #0f0; }
         .preview { width: 30px; height: 30px; margin: 0 auto 5px; border: 2px solid #fff; }
         .circ { border-radius: 50%; }
         .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; }
-
-        /* UI JUEGO */
-        #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
-        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; }
-        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -54,94 +51,85 @@
             <div class="logo-hg">HG STUDIOS V2.0</div>
             <h1 id="titulo-dinamico" style="color:#0f0; margin: 5px 0 10px; text-shadow: 0 0 15px #0f0; letter-spacing: 2px;">SOLO UN PUNTO</h1>
             
-            <!-- SECCIÓN: LOGIN/AUTH -->
+            <!-- SECCIÓN: AUTH (REESTABLECIDA) -->
             <div id="seccion-auth">
-                <input type="email" id="l-email" placeholder="Correo Electrónico">
-                <input type="password" id="l-pass" placeholder="Contraseña">
-                <button onclick="login()" style="background:#0f0; color:#000;">ACCEDER</button>
+                <div style="display:flex; gap:10px; margin-bottom: 15px;">
+                    <button onclick="mostrarModo('login')" style="flex:1; padding:10px; background:#333; color:#0f0; border:1px solid #0f0;">ENTRAR</button>
+                    <button onclick="mostrarModo('registro')" style="flex:1; padding:10px; background:#333; color:#0f0; border:1px solid #0f0;">REGISTRO</button>
+                </div>
+                
+                <div id="form-login">
+                    <input type="email" id="l-email" placeholder="Correo Electrónico">
+                    <input type="password" id="l-pass" placeholder="Contraseña">
+                    <button onclick="login()" style="width:100%; padding:14px; background:#0f0; color:#000;">ACCEDER</button>
+                </div>
+
+                <div id="form-registro" style="display:none;">
+                    <input type="text" id="r-user" placeholder="Nombre de Guerrero">
+                    <input type="email" id="r-email" placeholder="Correo Electrónico">
+                    <input type="password" id="r-pass" placeholder="Contraseña">
+                    <button onclick="registro()" style="width:100%; padding:14px; background:#00ffff; color:#000;">CREAR CUENTA</button>
+                </div>
             </div>
 
-            <!-- SECCIÓN: MENÚ PRINCIPAL (4 OPCIONES) -->
+            <!-- SECCIÓN: MENÚ PRINCIPAL -->
             <div id="menu-principal">
                 <div class="stats-top">
-                    <span id="display-user">JUGADOR</span>
+                    <span id="display-user">GUERRERO</span>
                     <span>💰 <span id="val-monedas">0</span></span>
                     <span>🏆 <span id="val-victorias">0</span></span>
                 </div>
 
-                <!-- CONTENEDOR DE OPCIONES -->
                 <div id="menu-grid" class="grid-opciones">
                     <div class="opcion-card full-width" onclick="navegarA('lobby')">
                         <span>🎮 INICIAR PARTIDA</span>
-                        <small>Entrar a la arena de combate</small>
+                        <small>Entrar a la arena</small>
                     </div>
                     <div class="opcion-card" onclick="navegarA('personajes')">
                         <span>👤 GUERREROS</span>
-                        <small>Cambia tu clase</small>
+                        <small>Clases</small>
                     </div>
                     <div class="opcion-card" onclick="navegarA('tienda')">
                         <span>🛒 TIENDA HG</span>
-                        <small>Nuevos skins</small>
+                        <small>Skins</small>
                     </div>
                     <div class="opcion-card" onclick="navegarA('sala')">
                         <span>🏠 CREAR SALA</span>
-                        <small>Partida privada</small>
+                        <small>Privada</small>
                     </div>
                 </div>
 
-                <!-- SUB-PANTALLA: LOBBY -->
+                <!-- SUB-PANTALLAS -->
                 <div id="sub-lobby" class="sub-menu">
-                    <div class="sala-info">SALA PÚBLICA #01<br><span id="txt-sala">Buscando jugadores...</span></div>
-                    <button id="btn-start" style="display:none; background:#f0f; color:#fff;" onclick="socket.emit('solicitar_inicio_partida')">¡COMENZAR!</button>
+                    <p id="txt-sala">Buscando jugadores...</p>
+                    <button id="btn-start" style="display:none; background:#f0f; color:#fff; width:100%; padding:15px;" onclick="socket.emit('solicitar_inicio_partida')">¡EMPEZAR!</button>
                     <button class="btn-volver" onclick="volverMenu()">ATRÁS</button>
                 </div>
 
-                <!-- SUB-PANTALLA: PERSONAJES -->
                 <div id="sub-personajes" class="sub-menu">
                     <div class="grid-pj">
-                        <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')">
-                            <div class="preview circ"></div><small>ASALTANTE</small>
-                        </div>
-                        <div class="card-pj" id="card-cuadrado" onclick="seleccionarClase('cuadrado')">
-                            <div class="preview"></div><small>TANQUE</small>
-                        </div>
-                        <div class="card-pj" id="card-triangulo" onclick="seleccionarClase('triangulo')">
-                            <div class="preview tri"></div><small>ESTRATEGA</small>
-                        </div>
+                        <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')"><div class="preview circ"></div>ASALTANTE</div>
+                        <div class="card-pj" id="card-cuadrado" onclick="seleccionarClase('cuadrado')"><div class="preview"></div>TANQUE</div>
+                        <div class="card-pj" id="card-triangulo" onclick="seleccionarClase('triangulo')"><div class="preview tri"></div>ESTRATEGA</div>
                     </div>
                     <button class="btn-volver" onclick="volverMenu()">GUARDAR</button>
                 </div>
 
-                <!-- SUB-PANTALLA: TIENDA -->
                 <div id="sub-tienda" class="sub-menu">
-                    <p style="color:#aaa;">¡PRÓXIMAMENTE!<br>Nuevos colores y estelas disponibles con tus monedas HG.</p>
-                    <button class="btn-volver" onclick="volverMenu()">CERRAR</button>
+                    <p style="color:#aaa;">PRÓXIMAMENTE</p>
+                    <button class="btn-volver" onclick="volverMenu()">VOLVER</button>
                 </div>
 
-                <!-- SUB-PANTALLA: SALA -->
                 <div id="sub-sala" class="sub-menu">
-                    <p>CONFIGURAR SALA PRIVADA</p>
-                    <input type="text" placeholder="NOMBRE DE LA SALA">
-                    <button style="background:#0ff; color:#000;">CREAR CON 500 💰</button>
+                    <p>SALA PRIVADA</p>
                     <button class="btn-volver" onclick="volverMenu()">CANCELAR</button>
                 </div>
+
+                <button class="btn-logout" onclick="location.reload()">CERRAR SESIÓN</button>
             </div>
         </div>
     </div>
 
-    <!-- PANTALLA FIN (INICIO) -->
-    <div id="pantalla-fin" class="pantalla">
-        <div class="form-container">
-            <h1 id="titulo-final">FIN DEL JUEGO</h1>
-            <div id="texto-puesto" style="font-size:3em; color:#0f0;">#1</div>
-            <button onclick="location.reload()" style="background:#0f0; color:#000;">VOLVER AL MENÚ</button>
-        </div>
-    </div>
-
-    <div id="ui-android">
-        <div id="joy-base"><div id="joy-stick"></div></div>
-        <button id="btn-dash">DASH</button>
-    </div>
     <canvas id="gameCanvas"></canvas>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
@@ -150,27 +138,20 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, vivo: true, type: 'circulo' };
-let players = {}, walls = [], zona = { x:2500, y:2500, radio:2500 }, juegoIniciado = false;
+let player = { x: 2500, y: 2500, speed: 7.5, vivo: true, type: 'circulo' };
+let juegoIniciado = false;
 
-// --- NAVEGACIÓN HG STUDIOS ---
+// NAVEGACIÓN Y AUTH
+function mostrarModo(modo) {
+    document.getElementById('form-login').style.display = modo === 'login' ? 'block' : 'none';
+    document.getElementById('form-registro').style.display = modo === 'registro' ? 'block' : 'none';
+}
+
 function navegarA(seccion) {
     document.getElementById('menu-grid').style.display = 'none';
     document.querySelectorAll('.sub-menu').forEach(m => m.style.display = 'none');
-    
-    if(seccion === 'lobby') {
-        document.getElementById('sub-lobby').style.display = 'block';
-        document.getElementById('titulo-dinamico').innerText = "LOBBY DE BATALLA";
-    } else if(seccion === 'personajes') {
-        document.getElementById('sub-personajes').style.display = 'block';
-        document.getElementById('titulo-dinamico').innerText = "CLASES";
-    } else if(seccion === 'tienda') {
-        document.getElementById('sub-tienda').style.display = 'block';
-        document.getElementById('titulo-dinamico').innerText = "TIENDA HG";
-    } else if(seccion === 'sala') {
-        document.getElementById('sub-sala').style.display = 'block';
-        document.getElementById('titulo-dinamico').innerText = "SALA PRIVADA";
-    }
+    document.getElementById('sub-' + seccion).style.display = 'block';
+    document.getElementById('titulo-dinamico').innerText = seccion.toUpperCase();
 }
 
 function volverMenu() {
@@ -179,11 +160,19 @@ function volverMenu() {
     document.getElementById('titulo-dinamico').innerText = "MENÚ PRINCIPAL";
 }
 
-// --- LOGICA DE SOCKETS ---
 function login() {
     const email = document.getElementById('l-email').value;
     const pass = document.getElementById('l-pass').value;
     if(email && pass) socket.emit('login_usuario', { email, password: pass });
+}
+
+function registro() {
+    const d = { 
+        username: document.getElementById('r-user').value, 
+        email: document.getElementById('r-email').value, 
+        password: document.getElementById('r-pass').value 
+    };
+    if(d.username && d.email && d.password) socket.emit('registrar_usuario', d);
 }
 
 socket.on('login_resultado', d => {
@@ -193,34 +182,29 @@ socket.on('login_resultado', d => {
         document.getElementById('display-user').innerText = d.username.toUpperCase();
         document.getElementById('val-monedas').innerText = d.monedas;
         document.getElementById('val-victorias').innerText = d.victorias;
-    }
+        document.getElementById('titulo-dinamico').innerText = "MENÚ PRINCIPAL";
+    } else { alert("Datos incorrectos"); }
 });
 
 socket.on('actualizar_sala', d => {
-    document.getElementById('txt-sala').innerText = `LISTOS: ${d.total} / 100`;
+    document.getElementById('txt-sala').innerText = `JUGADORES EN SALA: ${d.total}`;
     if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
-socket.on('iniciar_partida', d => {
-    zona = d.zona; walls = d.walls || [];
+socket.on('iniciar_partida', () => {
     juegoIniciado = true;
     document.getElementById('pantalla-inicio').style.display = 'none';
 });
 
-// --- DIBUJO ---
 function seleccionarClase(clase) {
     player.type = clase;
     document.querySelectorAll('.card-pj').forEach(c => c.classList.remove('selected'));
     document.getElementById('card-' + clase).classList.add('selected');
-    player.speed = (clase === 'circulo') ? 7.5 : (clase === 'cuadrado' ? 5.5 : 6.5);
 }
 
 function draw() {
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
-    if(juegoIniciado) {
-        // Lógica de renderizado del mapa aquí...
-    }
     requestAnimationFrame(draw);
 }
 draw();
