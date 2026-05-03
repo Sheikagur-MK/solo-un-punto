@@ -3,50 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Solo un Punto: NEON REVOLUTION</title>
+    <title>Solo un Punto - HG NEON</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Orbitron', sans-serif; }
-        canvas { display: block; filter: contrast(1.2) brightness(1.1); }
-        .pantalla { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        .form-container { background: #0a0a0a; padding: 40px; border-radius: 5px; border-left: 5px solid #0f0; width: 90%; max-width: 400px; color: #0f0; box-shadow: -20px 0 50px rgba(0,255,0,0.1); }
-        input { width: 100%; padding: 12px; margin: 10px 0; background: #111; border: 1px solid #333; color: #0f0; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; margin: 5px 0; cursor: pointer; background: #0f0; color: #000; border: none; font-weight: bold; text-transform: uppercase; transition: 0.3s; }
-        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; }
-        #menu-principal { display: none; }
-        .stats-top { display: flex; justify-content: space-between; font-size: 0.8em; margin-bottom: 20px; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .opcion-card { border: 1px solid #333; padding: 15px; margin: 5px 0; cursor: pointer; text-align: center; }
-        .opcion-card:hover { border-color: #0f0; color: #fff; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: sans-serif; }
+        canvas { display: block; }
+        .ui-layer { position: fixed; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+        .menu-box { background: rgba(0,20,0,0.9); border: 2px solid #0f0; padding: 30px; color: #0f0; pointer-events: auto; min-width: 300px; text-align: center; }
+        input { background: #000; border: 1px solid #0f0; color: #0f0; padding: 10px; width: 100%; margin: 10px 0; box-sizing: border-box; }
+        button { background: #0f0; border: none; color: #000; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; }
+        #game-ui { position: fixed; top: 20px; left: 20px; color: #0f0; z-index: 5; display: none; }
     </style>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-
-    <div id="pantalla-inicio" class="pantalla">
-        <div class="form-container">
-            <h2 style="letter-spacing: 5px;">SOLO UN PUNTO</h2>
-            <div id="seccion-auth">
-                <div id="form-login">
-                    <input type="email" id="l-email" placeholder="CYBER-MAIL">
-                    <input type="password" id="l-pass" placeholder="ACCESS-KEY">
-                    <button onclick="login()">ESTABLISH CONNECTION</button>
-                </div>
-            </div>
-            <div id="menu-principal">
-                <div class="stats-top">
-                    <span id="display-user">GUEST</span>
-                    <span>$ <span id="val-monedas">0</span></span>
-                </div>
-                <div id="menu-grid">
-                    <div class="opcion-card" style="background:#0f0; color:#000;" onclick="navegarA('lobby')">SYNC TO MATCH</div>
-                    <div id="sub-lobby" style="display:none; margin-top:15px;">
-                        <p id="txt-sala">WAITING FOR SQUAD...</p>
-                        <button id="btn-start" style="display:none;" onclick="socket.emit('solicitar_inicio_partida')">INITIATE COMBAT</button>
-                    </div>
-                </div>
-            </div>
+    <div id="game-ui">ZONA ESTABLE</div>
+    <div class="ui-layer" id="ui-container">
+        <div class="menu-box" id="auth-box">
+            <h1>SOLO UN PUNTO</h1>
+            <input type="email" id="email" placeholder="CORREO">
+            <input type="password" id="pass" placeholder="CONTRASEÑA">
+            <button onclick="login()">CONECTAR</button>
+        </div>
+        <div class="menu-box" id="lobby-box" style="display:none;">
+            <h2 id="user-tag">---</h2>
+            <p id="status">ESPERANDO...</p>
+            <button id="start-btn" style="display:none;" onclick="socket.emit('solicitar_inicio_partida')">INICIAR COMBATE</button>
         </div>
     </div>
+    <canvas id="gameCanvas"></canvas>
 
 <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 <script>
@@ -54,147 +37,127 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, vx:0, vy:0, angle: 0, vivo: true };
-let cam = { x: 2500, y: 2500 };
+let player = { x: 2500, y: 2500, vx: 0, vy: 0, r: 15 };
 let players = {};
-let items = [];
 let walls = [];
-let particles = [];
-let zona = { x: 2500, y: 2500, radio: 2500 };
-let juegoIniciado = false;
+let items = [];
+let zona = { radio: 2500 };
+let cam = { x: 2500, y: 2500 };
+let iniciado = false;
 const keys = {};
 
 function login() {
-    const email = document.getElementById('l-email').value;
-    const pass = document.getElementById('l-pass').value;
-    socket.emit('login_usuario', { email, password: pass });
-}
-
-function navegarA(s) {
-    document.getElementById('sub-' + s).style.display = 'block';
+    socket.emit('login_usuario', { 
+        email: document.getElementById('email').value, 
+        password: document.getElementById('pass').value 
+    });
 }
 
 socket.on('login_resultado', d => {
     if(d.exito) {
-        document.getElementById('seccion-auth').style.display = 'none';
-        document.getElementById('menu-principal').style.display = 'block';
-        document.getElementById('display-user').innerText = d.username;
+        document.getElementById('auth-box').style.display = 'none';
+        document.getElementById('lobby-box').style.display = 'block';
+        document.getElementById('user-tag').innerText = d.username;
     }
 });
 
 socket.on('actualizar_sala', d => {
-    document.getElementById('txt-sala').innerText = `CONNECTIVES: ${d.total}`;
-    document.getElementById('btn-start').style.display = (socket.id === d.hostId) ? 'block' : 'none';
+    document.getElementById('status').innerText = `JUGADORES: ${d.total}`;
+    document.getElementById('start-btn').style.display = (socket.id === d.hostId) ? 'block' : 'none';
 });
 
 socket.on('iniciar_partida', data => {
-    items = data.items;
     walls = data.walls;
+    items = data.items;
     zona = data.zona;
-    juegoIniciado = true;
-    document.getElementById('pantalla-inicio').style.display = 'none';
+    iniciado = true;
+    document.getElementById('ui-container').style.display = 'none';
+    document.getElementById('game-ui').style.display = 'block';
 });
 
-socket.on('playerMoved', d => { players[d.id] = d; });
-socket.on('actualizar_zona', d => { zona = d.zona; });
-socket.on('efecto_explosion', d => {
-    for(let i=0; i<20; i++) particles.push({x: d.x, y: d.y, vx: Math.random()*10-5, vy: Math.random()*10-5, life: 1, c: '#f00'});
-});
+socket.on('playerMoved', d => players[d.id] = d);
+socket.on('actualizar_zona', d => zona = d.zona);
+
+function checkCollision(nx, ny) {
+    for(let w of walls) {
+        if(nx + player.r > w.x && nx - player.r < w.x + w.w && 
+           ny + player.r > w.y && ny - player.r < w.y + w.h) return true;
+    }
+    return false;
+}
 
 function update() {
-    if(!juegoIniciado) return;
+    if(!iniciado) return;
 
-    // Movimiento con Inercia 2026[cite: 8]
-    const accel = 0.8;
-    const friction = 0.92;
-    if(keys['w'] || keys['ArrowUp']) player.vy -= accel;
-    if(keys['s'] || keys['ArrowDown']) player.vy += accel;
-    if(keys['a'] || keys['ArrowLeft']) player.vx -= accel;
-    if(keys['d'] || keys['ArrowRight']) player.vx += accel;
+    const speed = 0.8;
+    if(keys['w']) player.vy -= speed;
+    if(keys['s']) player.vy += speed;
+    if(keys['a']) player.vx -= speed;
+    if(keys['d']) player.vx += speed;
 
-    player.vx *= friction;
-    player.vy *= friction;
-    player.x += player.vx;
-    player.y += player.vy;
+    player.vx *= 0.9;
+    player.vy *= 0.9;
 
-    // Smooth Camera[cite: 8]
+    // Colisión simple con muros[cite: 8]
+    if(!checkCollision(player.x + player.vx, player.y)) player.x += player.vx;
+    if(!checkCollision(player.x, player.y + player.vy)) player.y += player.vy;
+
     cam.x += (player.x - cam.x) * 0.1;
     cam.y += (player.y - cam.y) * 0.1;
 
-    socket.emit('move', player);
+    socket.emit('move', { x: player.x, y: player.y });
 }
 
-function draw() {
+function render() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     update();
 
-    if(!juegoIniciado) {
-        ctx.fillStyle = '#050505';
-        ctx.fillRect(0,0, canvas.width, canvas.height);
-        requestAnimationFrame(draw);
-        return;
-    }
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.save();
-    ctx.translate(canvas.width/2 - cam.x, canvas.height/2 - cam.y);
+    if(iniciado) {
+        ctx.save();
+        ctx.translate(canvas.width/2 - cam.x, canvas.height/2 - cam.y);
 
-    // Fondo Tech
-    ctx.strokeStyle = '#111';
-    for(let i=0; i<=5000; i+=250) {
-        ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,5000); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(5000,i); ctx.stroke();
-    }
+        // Cuadrícula
+        ctx.strokeStyle = '#020';
+        for(let i=0; i<=5000; i+=200) {
+            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,5000); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(5000,i); ctx.stroke();
+        }
 
-    // Muros Neon
-    walls.forEach(w => {
-        ctx.fillStyle = '#0a0a0a';
-        ctx.strokeStyle = '#0f0';
-        ctx.lineWidth = 3;
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#0f0';
-        ctx.fillRect(w.x, w.y, w.w, w.h);
-        ctx.strokeRect(w.x, w.y, w.w, w.h);
-    });
+        // Muros con Brillo[cite: 8]
+        walls.forEach(w => {
+            ctx.shadowBlur = 10; ctx.shadowColor = '#0f0';
+            ctx.fillStyle = '#050';
+            ctx.fillRect(w.x, w.y, w.w, w.h);
+            ctx.shadowBlur = 0;
+        });
 
-    // Items
-    items.forEach(it => {
-        ctx.fillStyle = '#0ff';
-        ctx.shadowBlur = 20;
-        ctx.beginPath(); ctx.arc(it.x, it.y, 10, 0, Math.PI*2); ctx.fill();
-    });
-
-    // Players
-    for(let id in players) {
+        // Otros Jugadores
         ctx.fillStyle = '#f00';
-        ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 15, 0, Math.PI*2); ctx.fill();
+        for(let id in players) {
+            ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 15, 0, Math.PI*2); ctx.fill();
+        }
+
+        // Yo
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill();
+
+        // Zona Prohibida
+        ctx.strokeStyle = '#f00';
+        ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.arc(2500, 2500, zona.radio, 0, Math.PI*2); ctx.stroke();
+
+        ctx.restore();
     }
-    
-    ctx.fillStyle = '#0f0';
-    ctx.shadowColor = '#0f0';
-    ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill();
-
-    // Zona de Muerte
-    ctx.strokeStyle = '#f00';
-    ctx.lineWidth = 10;
-    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
-
-    // Partículas
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = p.c;
-        ctx.globalAlpha = p.life;
-        ctx.fillRect(p.x, p.y, 4, 4);
-        if(p.life <= 0) particles.splice(i, 1);
-    });
-
-    ctx.restore();
-    requestAnimationFrame(draw);
+    requestAnimationFrame(render);
 }
 
-window.onkeydown = e => keys[e.key] = true;
-window.onkeyup = e => keys[e.key] = false;
-draw();
+window.onkeydown = e => keys[e.key.toLowerCase()] = true;
+window.onkeyup = e => keys[e.key.toLowerCase()] = false;
+render();
 </script>
 </body>
 </html>
