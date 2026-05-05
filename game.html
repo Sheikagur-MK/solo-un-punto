@@ -5,43 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Solo un Punto - Next Gen 2026</title>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         canvas { display: block; }
         
-        /* UI DE AVISOS */
-        #ui-info { position: fixed; top: 10px; right: 10px; color: white; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #0f0; z-index: 100; font-size: 14px; box-shadow: 0 0 10px #0f0; }
-        #aviso-zona { position: fixed; top: 25%; left: 50%; transform: translateX(-50%); color: #ff0000; font-size: 2.5em; font-weight: bold; display: none; z-index: 100; text-shadow: 0 0 20px #f00; text-align: center; }
+        /* UI DE AVISOS - ESTILO NEXT GEN */
+        #ui-info { position: fixed; top: 20px; right: 20px; color: #00ffaa; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); padding: 15px; border-radius: 12px; border-left: 4px solid #00ffaa; z-index: 100; font-family: 'Courier New', monospace; box-shadow: 0 0 15px rgba(0,255,170,0.2); }
+        #aviso-zona { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); color: #ff3333; font-size: 3em; font-weight: 900; display: none; z-index: 100; text-shadow: 0 0 30px #ff0000; animation: pulse 1s infinite; text-align: center; }
         #dash-count { position: fixed; bottom: 150px; right: 40px; color: #00ffff; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 10px #0ff; display: none; }
 
-        /* PANTALLAS */
-        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* PANTALLAS - EFECTO CRISTAL ESMERILADO */
+        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #0a0a0f 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .form-container { background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(15px); padding: 30px; border-radius: 20px; border: 1px solid rgba(0, 255, 150, 0.3); width: 85%; max-width: 400px; text-align: center; box-shadow: 0 0 40px rgba(0, 255, 150, 0.15); }
         
-        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
-        input:focus { box-shadow: 0 0 15px #0f0; }
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #00ffaa; background: rgba(0,0,0,0.5); color: #00ffaa; outline: none; transition: 0.3s; }
+        input:focus { box-shadow: 0 0 15px #00ffaa; }
         
-        button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
-        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.02); }
+        button { width: 100%; padding: 14px; background: linear-gradient(45deg, #00ffaa, #00ccff); border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0, 255, 150, 0.4); }
+        button:hover { transform: scale(1.05); box-shadow: 0 0 25px #00ffaa; filter: brightness(1.2); }
 
         /* MENÚ DE PERSONAJES */
         #menu-personaje { display: none; flex-direction: row; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
-        .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 85px; font-size: 0.7em; }
-        .card-pj:hover { border-color: #0f0; transform: translateY(-5px); }
-        .card-pj.selected { border-color: #0f0; background: #030; box-shadow: 0 0 15px #0f0; }
+        .card-pj { background: rgba(0,0,0,0.5); border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 85px; font-size: 0.7em; }
+        .card-pj:hover { border-color: #00ffaa; transform: translateY(-5px); }
+        .card-pj.selected { border-color: #00ffaa; background: rgba(0, 255, 170, 0.1); box-shadow: 0 0 15px #00ffaa; }
         .preview { width: 30px; height: 30px; margin: 0 auto 10px; border: 2px solid #fff; }
         .circ { border-radius: 50%; }
-        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; border-top: 0; background: none; border-top: none; }
+        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; }
 
-        /* PANTALLA FINAL */
         #pantalla-fin { display: none; background: rgba(0,0,0,0.95); z-index: 10000; }
-        #texto-puesto { font-size: 5em; color: #0f0; margin: 10px 0; text-shadow: 0 0 30px #0f0; }
-        .stats-finales { color: #0ff; margin-bottom: 20px; font-size: 1.1em; }
+        #texto-puesto { font-size: 5em; color: #00ffaa; margin: 10px 0; text-shadow: 0 0 30px #00ffaa; }
         
-        /* CONTROLES MÓVILES */
         #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
-        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
-        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 20px #0f0; }
-        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #0ff; color: #000; }
+        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,170,0.3); }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #00ffaa; border-radius: 50%; box-shadow: 0 0 20px #00ffaa; }
+        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #00ffff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #00ffff; color: #000; }
     </style>
 </head>
 <body>
@@ -49,14 +48,13 @@
     <div id="aviso-zona">¡FUERA DE LA ZONA!<br><span id="count-zona">5</span>s</div>
     <div id="dash-count">DASH: 0</div>
 
-    <!-- PANTALLA INICIO -->
     <div id="pantalla-inicio" class="pantalla">
         <div class="form-container"> 
-            <h1 style="color:#0f0; margin-bottom:10px; text-shadow: 0 0 15px #0f0;">SOLO UN PUNTO</h1>
+            <h1 style="color:#00ffaa; margin-bottom:10px; text-shadow: 0 0 20px rgba(0,255,170,0.6); letter-spacing: 5px;">SOLO UN PUNTO <span style="font-size: 0.4em; vertical-align: middle; opacity: 0.7;">V2.0</span></h1>
             
             <div id="auth-buttons" style="display:flex; gap:10px; margin-bottom: 15px;">
-               <button onclick="mostrarModo('login')" style="background:#333; color:#0f0; border:1px solid #0f0;">LOGIN</button>
-               <button onclick="mostrarModo('registro')" style="background:#333; color:#0f0; border:1px solid #0f0;">REGISTRO</button>
+               <button onclick="mostrarModo('login')" style="background:rgba(255,255,255,0.1); color:#00ffaa; border:1px solid #00ffaa;">LOGIN</button>
+               <button onclick="mostrarModo('registro')" style="background:rgba(255,255,255,0.1); color:#00ffaa; border:1px solid #00ffaa;">REGISTRO</button>
             </div>
             
             <div id="form-login">
@@ -69,10 +67,9 @@
                 <input type="text" id="r-user" placeholder="Nombre de Guerrero">
                 <input type="email" id="r-email" placeholder="Correo Electrónico">
                 <input type="password" id="r-pass" placeholder="Contraseña">
-                <button onclick="registro()" style="background:#00ffff;">CREAR CUENTA</button>
+                <button onclick="registro()" style="background:#00ffff; color:#000;">CREAR CUENTA</button>
             </div>
 
-            <!-- MENÚ DE SELECCIÓN DE PERSONAJE -->
             <div id="menu-personaje">
                 <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')">
                     <div class="preview circ"></div>
@@ -88,18 +85,17 @@
                 </div>
             </div>
 
-            <p id="txt-sala" style="margin-top:20px; font-weight:bold; color:#0f0;">Conectando al servidor...</p>
+            <p id="txt-sala" style="margin-top:20px; font-weight:bold; color:#00ffaa;">Conectando al servidor...</p>
             <button id="btn-start" style="display:none; background:#ff00ff; color:white;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
         </div>
     </div>
 
-    <!-- PANTALLA FINAL -->
     <div id="pantalla-fin" class="pantalla">
         <div class="form-container" style="border-color: #0ff;">
             <h1 id="titulo-final">FIN DEL COMBATE</h1>
             <div id="texto-puesto">#1</div>
             <div class="stats-finales" id="stats-jugador"></div>
-            <button onclick="location.reload()" style="background:#0f0;">VOLVER AL LOBBY</button>
+            <button onclick="location.reload()" style="background:#00ffaa;">VOLVER AL LOBBY</button>
         </div>
     </div>
 
@@ -115,6 +111,12 @@
 const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
+
+// VARIABLES DE IMAGEN Y SUELO
+const floorImg = new Image();
+floorImg.src = 'https://i.imgur.com/Tu7E1R1.png'; 
+let floorPattern;
+floorImg.onload = () => { floorPattern = ctx.createPattern(floorImg, 'repeat'); };
 
 let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
 let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
@@ -139,8 +141,6 @@ function seleccionarClase(clase) {
     player.type = clase;
     document.querySelectorAll('.card-pj').forEach(c => c.classList.remove('selected'));
     document.getElementById('card-' + clase).classList.add('selected');
-    
-    // Ajustes de balance
     if(clase === 'circulo') player.speed = 7.5; 
     if(clase === 'cuadrado') player.speed = 5.5;
     if(clase === 'triangulo') player.speed = 6.0;
@@ -169,9 +169,7 @@ socket.on('login_resultado', d => {
         document.getElementById('auth-buttons').style.display = 'none';
         document.getElementById('menu-personaje').style.display = 'flex';
         document.querySelector('.form-container h1').innerText = "ELIGE TU FORMA";
-    } else {
-        alert("Error de acceso.");
-    }
+    } else { alert("Error de acceso."); }
 });
 
 socket.on('registro_resultado', d => {
@@ -212,7 +210,6 @@ function handleInput() {
     if(teclas['ArrowLeft'] || teclas['KeyA']) dx = -1;
     if(teclas['ArrowRight'] || teclas['KeyD']) dx = 1;
     if(teclas['Space']) ejecutarDash();
-
     if(joyX !== 0 || joyY !== 0) { dx = joyX; dy = joyY; }
 
     if(dx !== 0 || dy !== 0) {
@@ -226,10 +223,9 @@ function handleInput() {
             player.angle = Math.atan2(dy, dx);
             player.anim += 0.2;
             player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.2;
-            
             if(!trails[socket.id]) trails[socket.id] = [];
             trails[socket.id].push({x: player.x, y: player.y});
-            if(trails[socket.id].length > 10) trails[socket.id].shift();
+            if(trails[socket.id].length > 15) trails[socket.id].shift();
         }
     }
 
@@ -256,7 +252,7 @@ function handleInput() {
     const dist = Math.hypot(player.x - zona.x, player.y - zona.y);
     if(dist > zona.radio && player.vivo) {
         if(!fueraInterval) {
-            let t = (player.type === 'cuadrado') ? 7 : 5; // Tanque dura más
+            let t = (player.type === 'cuadrado') ? 7 : 5;
             document.getElementById('aviso-zona').style.display = 'block';
             fueraInterval = setInterval(() => {
                 t--; document.getElementById('count-zona').innerText = t;
@@ -283,66 +279,74 @@ function drawShape(p, isMe) {
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle);
 
-    // Efecto de aura mística (Estilo Ori)
-    const gradient = ctx.createRadialGradient(0, 0, 5, 0, 0, 30);
-    let mainColor = isMe ? "rgba(0, 255, 150, " : "rgba(200, 200, 200, "; // Verde místico vs Gris
-    if (p.hasWeapon) mainColor = "rgba(255, 50, 50, "; // Rojo vibrante si tiene arma
-
-    gradient.addColorStop(0, mainColor + "1)");   // Centro brillante
-    gradient.addColorStop(0.4, mainColor + "0.4)"); // Brillo suave
-    gradient.addColorStop(1, mainColor + "0)");   // Desvanecimiento
+    const gradient = ctx.createRadialGradient(0, 0, 5, 0, 0, 35);
+    let mainColor = isMe ? "rgba(0, 255, 170, " : "rgba(200, 200, 200, ";
+    if (p.hasWeapon) mainColor = "rgba(255, 50, 50, ";
+    gradient.addColorStop(0, mainColor + "1)");
+    gradient.addColorStop(0.4, mainColor + "0.3)");
+    gradient.addColorStop(1, mainColor + "0)");
 
     ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(0, 0, 30, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, 35, 0, Math.PI * 2); ctx.fill();
 
-    // El "Core" o núcleo del personaje (Sustituye al círculo simple)
-    ctx.shadowBlur = 20;
-    ctx.shadowColor = isMe ? "#0f0" : "#fff";
-    ctx.fillStyle = "#fff"; // Núcleo blanco brillante
-    
-    if (p.type === 'cuadrado') {
-        ctx.fillRect(-12, -12, 24, 24); // Tanque como un cubo de luz
-    } else if (p.type === 'triangulo') {
-        ctx.beginPath(); // Estratega como una punta de flecha de energía
-        ctx.moveTo(15, 0); ctx.lineTo(-10, 12); ctx.lineTo(-10, -12);
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = isMe ? "#0f0" : "#555";
+    ctx.fillStyle = isMe ? "#fff" : "#888";
+
+    if(p.type === 'cuadrado') {
+        ctx.fillRect(-15, -15, 30, 30);
+    } else if(p.type === 'triangulo') {
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-12, 15); ctx.lineTo(-12, -15);
         ctx.closePath(); ctx.fill();
     } else {
-        ctx.beginPath(); // Asaltante como una gota de luz
-        ctx.ellipse(0, 0, 12 * (p.stretch || 1), 10, 0, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.ellipse(0, 0, 13 * (p.stretch || 1), 11, 0, 0, Math.PI * 2); ctx.fill();
     }
+    
+    if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.shadowColor = "#f00"; ctx.fillRect(12, -4, 25, 8); }
     ctx.restore();
-}    
+}
 
 function draw() {
     if(juegoIniciado) handleInput();
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-    ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
     
+    ctx.fillStyle = '#000'; ctx.fillRect(0,0, canvas.width, canvas.height);
     if(!juegoIniciado) { requestAnimationFrame(draw); return; }
 
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
 
-    ctx.fillStyle = "#1a1a1a"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+    // DIBUJAR SUELO DE PANAL
+    if (floorPattern) { ctx.fillStyle = floorPattern; ctx.fillRect(0, 0, 5000, 5000); }
 
-    for(let id in trails) {
-        ctx.beginPath(); ctx.lineWidth = 4;
-        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)';
-        trails[id].forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+    // PAREDES ESTILO NEÓN
+    ctx.fillStyle = "rgba(0, 255, 170, 0.15)";
+    walls.forEach(w => {
+        ctx.fillRect(w.x, w.y, w.w, w.h);
+        ctx.strokeStyle = "#00ffaa"; ctx.lineWidth = 2; ctx.strokeRect(w.x, w.y, w.w, w.h);
+    });
+
+    // RASTROS DE PARTÍCULAS
+    for (let id in trails) {
+        trails[id].forEach((p, index) => {
+            const opacity = index / trails[id].length;
+            ctx.fillStyle = id === socket.id ? `rgba(0, 255, 170, ${opacity * 0.4})` : `rgba(255, 255, 255, ${opacity * 0.1})`;
+            ctx.beginPath(); ctx.arc(p.x, p.y, 5 * opacity, 0, Math.PI * 2); ctx.fill();
+        });
     }
 
     particles.forEach((p, i) => {
         p.x += p.vx; p.y += p.vy; p.life -= 0.02;
-        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`; ctx.fillRect(p.x, p.y, 3, 3);
+        ctx.fillStyle = `rgba(0, 255, 170, ${p.life})`; ctx.fillRect(p.x, p.y, 3, 3);
         if(p.life <= 0) particles.splice(i, 1);
     });
 
     items.forEach(it => {
+        ctx.save();
+        ctx.shadowBlur = 15; ctx.shadowColor = it.type === 'weapon' ? '#f00' : '#0ff';
         ctx.fillStyle = it.type === 'weapon' ? '#f00' : '#0ff';
         ctx.fillRect(it.x, it.y, 20, 20);
+        ctx.restore();
     });
 
     for(let id in players) drawShape(players[id], false);
@@ -351,7 +355,7 @@ function draw() {
         socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon, type: player.type });
     }
 
-    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
+    ctx.strokeStyle = "#ff3333"; ctx.lineWidth = 8; ctx.shadowBlur = 20; ctx.shadowColor = "red";
     ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
 
     ctx.restore();
@@ -388,14 +392,13 @@ socket.on('playerMoved', d => {
     players[d.id] = d;
     if(!trails[d.id]) trails[d.id] = [];
     trails[d.id].push({x: d.x, y: d.y});
-    if(trails[d.id].length > 10) trails[d.id].shift();
+    if(trails[d.id].length > 15) trails[d.id].shift();
 });
 socket.on('playerDisconnected', id => { delete players[id]; delete trails[id]; });
 socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
 </script>
 </body>
 </html>
-
 
 
 
