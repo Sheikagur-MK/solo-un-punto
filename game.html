@@ -2,36 +2,110 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Solo un Punto - HG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Solo un Punto - Next Gen 2026</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
-        #gui { position: fixed; inset: 0; display: flex; justify-content: center; align-items: center; z-index: 100; background: rgba(0,0,0,0.8); }
-        .window { border: 2px solid #0f0; padding: 40px; background: #0a0a0a; text-align: center; box-shadow: 0 0 20px rgba(0,255,0,0.2); }
-        input { display: block; margin: 15px auto; padding: 12px; background: #000; border: 1px solid #0f0; color: #0f0; width: 250px; }
-        button { padding: 12px 30px; background: #0f0; color: #000; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        button:hover { background: #0a0; }
-        #hud { position: fixed; top: 20px; left: 20px; font-weight: bold; text-shadow: 0 0 5px #0f0; display: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #050505; touch-action: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+        
+        /* UI DE AVISOS */
+        #ui-info { position: fixed; top: 10px; right: 10px; color: white; background: rgba(0,0,0,0.8); padding: 12px; border-radius: 8px; border: 1px solid #0f0; z-index: 100; font-size: 14px; box-shadow: 0 0 10px #0f0; }
+        #aviso-zona { position: fixed; top: 25%; left: 50%; transform: translateX(-50%); color: #ff0000; font-size: 2.5em; font-weight: bold; display: none; z-index: 100; text-shadow: 0 0 20px #f00; text-align: center; }
+        #dash-count { position: fixed; bottom: 150px; right: 40px; color: #00ffff; font-size: 1.5em; font-weight: bold; text-shadow: 0 0 10px #0ff; display: none; }
+
+        /* PANTALLAS */
+        .pantalla { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1a1a 0%, #000 100%); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .form-container { background: rgba(26, 26, 26, 0.9); padding: 30px; border-radius: 20px; border: 2px solid #0f0; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 0 30px rgba(0, 255, 0, 0.2); }
+        
+        input { width: 90%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #0f0; background: #111; color: #0f0; outline: none; transition: 0.3s; }
+        input:focus { box-shadow: 0 0 15px #0f0; }
+        
+        button { width: 100%; padding: 14px; background: #0f0; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; color: #000; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        button:hover { background: #fff; box-shadow: 0 0 20px #0f0; transform: scale(1.02); }
+
+        /* MENÚ DE PERSONAJES */
+        #menu-personaje { display: none; flex-direction: row; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        .card-pj { background: #111; border: 2px solid #444; padding: 10px; border-radius: 10px; cursor: pointer; transition: 0.3s; width: 85px; font-size: 0.7em; }
+        .card-pj:hover { border-color: #0f0; transform: translateY(-5px); }
+        .card-pj.selected { border-color: #0f0; background: #030; box-shadow: 0 0 15px #0f0; }
+        .preview { width: 30px; height: 30px; margin: 0 auto 10px; border: 2px solid #fff; }
+        .circ { border-radius: 50%; }
+        .tri { width: 0; height: 0; border-left: 15px solid transparent; border-right: 15px solid transparent; border-bottom: 30px solid #fff; border-top: 0; background: none; border-top: none; }
+
+        /* PANTALLA FINAL */
+        #pantalla-fin { display: none; background: rgba(0,0,0,0.95); z-index: 10000; }
+        #texto-puesto { font-size: 5em; color: #0f0; margin: 10px 0; text-shadow: 0 0 30px #0f0; }
+        .stats-finales { color: #0ff; margin-bottom: 20px; font-size: 1.1em; }
+        
+        /* CONTROLES MÓVILES */
+        #ui-android { position: fixed; bottom: 0; left: 0; width: 100%; height: 200px; pointer-events: none; display: none; z-index: 10; }
+        #joy-base { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: auto; border: 2px solid rgba(0,255,0,0.3); }
+        #joy-stick { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: #0f0; border-radius: 50%; box-shadow: 0 0 20px #0f0; }
+        #btn-dash { position: absolute; bottom: 60px; right: 40px; width: 90px; height: 90px; background: #0ff; border-radius: 50%; pointer-events: auto; border: 3px solid #fff; font-weight: bold; box-shadow: 0 0 25px #0ff; color: #000; }
     </style>
 </head>
 <body>
-    <div id="hud">ZONA ESTABLE</div>
-    
-    <div id="gui">
-        <!-- Menú de Login -->
-        <div id="login-box" class="window">
-            <h1 style="letter-spacing: 5px;">SOLO UN PUNTO</h1>
-            <input type="email" id="email" placeholder="CORREO ELECTRÓNICO">
-            <input type="password" id="pass" placeholder="CONTRASEÑA">
-            <button onclick="intentarLogin()">ACCEDER</button>
-        </div>
+    <div id="ui-info">FASE: <span id="fase-val">1</span>/4 | CIERRE EN: <span id="timer-val">120</span>s</div>
+    <div id="aviso-zona">¡FUERA DE LA ZONA!<br><span id="count-zona">5</span>s</div>
+    <div id="dash-count">DASH: 0</div>
 
-        <!-- Sala de Espera -->
-        <div id="lobby-box" class="window" style="display:none;">
-            <h2 id="welcome-msg">BIENVENIDO</h2>
-            <p id="counter">CONECTADOS: 1</p>
-            <p style="font-size: 0.8em; color: #0a0;">ESPERANDO AL ANFITRIÓN...</p>
-            <button id="start-btn" style="display:none;" onclick="empezar()">INICIAR PARTIDA</button>
+    <!-- PANTALLA INICIO -->
+    <div id="pantalla-inicio" class="pantalla">
+        <div class="form-container"> 
+            <h1 style="color:#0f0; margin-bottom:10px; text-shadow: 0 0 15px #0f0;">SOLO UN PUNTO</h1>
+            
+            <div id="auth-buttons" style="display:flex; gap:10px; margin-bottom: 15px;">
+               <button onclick="mostrarModo('login')" style="background:#333; color:#0f0; border:1px solid #0f0;">LOGIN</button>
+               <button onclick="mostrarModo('registro')" style="background:#333; color:#0f0; border:1px solid #0f0;">REGISTRO</button>
+            </div>
+            
+            <div id="form-login">
+                <input type="email" id="l-email" placeholder="Correo Electrónico">
+                <input type="password" id="l-pass" placeholder="Contraseña">
+                <button onclick="login()">ENTRAR A BATALLA</button>
+            </div>
+            
+            <div id="form-registro" style="display:none;">
+                <input type="text" id="r-user" placeholder="Nombre de Guerrero">
+                <input type="email" id="r-email" placeholder="Correo Electrónico">
+                <input type="password" id="r-pass" placeholder="Contraseña">
+                <button onclick="registro()" style="background:#00ffff;">CREAR CUENTA</button>
+            </div>
+
+            <!-- MENÚ DE SELECCIÓN DE PERSONAJE -->
+            <div id="menu-personaje">
+                <div class="card-pj selected" id="card-circulo" onclick="seleccionarClase('circulo')">
+                    <div class="preview circ"></div>
+                    <span>ASALTANTE</span>
+                </div>
+                <div class="card-pj" id="card-cuadrado" onclick="seleccionarClase('cuadrado')">
+                    <div class="preview"></div>
+                    <span>TANQUE</span>
+                </div>
+                <div class="card-pj" id="card-triangulo" onclick="seleccionarClase('triangulo')">
+                    <div class="preview tri"></div>
+                    <span>ESTRATEGA</span>
+                </div>
+            </div>
+
+            <p id="txt-sala" style="margin-top:20px; font-weight:bold; color:#0f0;">Conectando al servidor...</p>
+            <button id="btn-start" style="display:none; background:#ff00ff; color:white;" onclick="socket.emit('solicitar_inicio_partida')">¡INICIAR PARTIDA!</button>
         </div>
+    </div>
+
+    <!-- PANTALLA FINAL -->
+    <div id="pantalla-fin" class="pantalla">
+        <div class="form-container" style="border-color: #0ff;">
+            <h1 id="titulo-final">FIN DEL COMBATE</h1>
+            <div id="texto-puesto">#1</div>
+            <div class="stats-finales" id="stats-jugador"></div>
+            <button onclick="location.reload()" style="background:#0f0;">VOLVER AL LOBBY</button>
+        </div>
+    </div>
+
+    <div id="ui-android">
+        <div id="joy-base"><div id="joy-stick"></div></div>
+        <button id="btn-dash">DASH</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -42,91 +116,270 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-let player = { x: 2500, y: 2500, vx: 0, vy: 0, r: 15 };
-let players = {};
-let walls = [];
-let activo = false;
-const keys = {};
+let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
+let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
+let trails = {}, particles = [];
+let juegoIniciado = false, joyX = 0, joyY = 0, teclas = {};
+let fueraInterval = null;
 
-function intentarLogin() {
-    socket.emit('login_usuario', { 
-        email: document.getElementById('email').value, 
-        password: document.getElementById('pass').value 
-    });
+if(/Android|iPhone/i.test(navigator.userAgent)) {
+    document.getElementById('ui-android').style.display = 'block';
+    document.getElementById('dash-count').style.display = 'block';
+}
+    
+window.onkeydown = e => teclas[e.code] = true;
+window.onkeyup = e => teclas[e.code] = false;
+
+function mostrarModo(modo) {
+    document.getElementById('form-login').style.display = modo === 'login' ? 'block' : 'none';
+    document.getElementById('form-registro').style.display = modo === 'registro' ? 'block' : 'none';
+}
+
+function seleccionarClase(clase) {
+    player.type = clase;
+    document.querySelectorAll('.card-pj').forEach(c => c.classList.remove('selected'));
+    document.getElementById('card-' + clase).classList.add('selected');
+    
+    // Ajustes de balance
+    if(clase === 'circulo') player.speed = 7.5; 
+    if(clase === 'cuadrado') player.speed = 5.5;
+    if(clase === 'triangulo') player.speed = 6.0;
+}
+
+function login() { 
+    const email = document.getElementById('l-email').value;
+    const pass = document.getElementById('l-pass').value;
+    if(!email || !pass) return alert("Ingresa tus datos");
+    socket.emit('login_usuario', { email: email, password: pass }); 
+}
+
+function registro() {
+    const datos = { 
+        username: document.getElementById('r-user').value, 
+        email: document.getElementById('r-email').value, 
+        password: document.getElementById('r-pass').value 
+    };
+    if(!datos.username || !datos.email || !datos.password) return alert("Llena todos los campos");
+    socket.emit('registrar_usuario', datos);
 }
 
 socket.on('login_resultado', d => {
     if(d.exito) {
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('lobby-box').style.display = 'block';
-        document.getElementById('welcome-msg').innerText = `OPERATIVO: ${d.username}`;
+        document.getElementById('form-login').style.display = 'none';
+        document.getElementById('auth-buttons').style.display = 'none';
+        document.getElementById('menu-personaje').style.display = 'flex';
+        document.querySelector('.form-container h1').innerText = "ELIGE TU FORMA";
+    } else {
+        alert("Error de acceso.");
     }
+});
+
+socket.on('registro_resultado', d => {
+    if(d.exito) { alert("¡Cuenta creada!"); mostrarModo('login'); }
+    else alert("Error en registro.");
 });
 
 socket.on('actualizar_sala', d => {
-    document.getElementById('counter').innerText = `CONECTADOS: ${d.total}`;
-    document.getElementById('start-btn').style.display = (socket.id === d.hostId) ? 'block' : 'none';
+    document.getElementById('txt-sala').innerText = `Jugadores Listos: ${d.total}`;
+    if(socket.id === d.hostId) document.getElementById('btn-start').style.display = 'block';
 });
 
 socket.on('iniciar_partida', d => {
-    walls = d.walls;
-    activo = true;
-    document.getElementById('gui').style.display = 'none';
-    document.getElementById('hud').style.display = 'block';
+    items = d.items; zona = d.zona; walls = d.walls || [];
+    juegoIniciado = true;
+    document.getElementById('pantalla-inicio').style.display = 'none';
 });
 
-function empezar() {
-    socket.emit('solicitar_inicio_partida');
+socket.on('actualizar_zona', d => {
+    zona = d.zona;
+    document.getElementById('fase-val').innerText = d.fase;
+    document.getElementById('timer-val').innerText = d.tiempo;
+});
+
+socket.on('efecto_explosion', d => createExplosion(d.x, d.y));
+
+function createExplosion(x, y) {
+    for(let i=0; i<20; i++) {
+        particles.push({ x, y, vx: (Math.random()-0.5)*12, vy: (Math.random()-0.5)*12, life: 1.0 });
+    }
 }
 
-socket.on('playerMoved', d => players[d.id] = d);
+function handleInput() {
+    if(!player.vivo) return;
+    let dx = 0, dy = 0;
+    if(teclas['ArrowUp'] || teclas['KeyW']) dy = -1;
+    if(teclas['ArrowDown'] || teclas['KeyS']) dy = 1;
+    if(teclas['ArrowLeft'] || teclas['KeyA']) dx = -1;
+    if(teclas['ArrowRight'] || teclas['KeyD']) dx = 1;
+    if(teclas['Space']) ejecutarDash();
 
-function loop() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if(joyX !== 0 || joyY !== 0) { dx = joyX; dy = joyY; }
 
-    if(activo) {
-        // Movimiento suave
-        if(keys['w']) player.vy -= 0.8; if(keys['s']) player.vy += 0.8;
-        if(keys['a']) player.vx -= 0.8; if(keys['d']) player.vx += 0.8;
-        player.vx *= 0.9; player.vy *= 0.9;
-        player.x += player.vx; player.y += player.vy;
-        socket.emit('move', { x: player.x, y: player.y });
+    if(dx !== 0 || dy !== 0) {
+        let nextX = player.x + dx * player.speed;
+        let nextY = player.y + dy * player.speed;
+        let hitWall = false;
+        walls.forEach(w => { if(nextX > w.x && nextX < w.x + w.w && nextY > w.y && nextY < w.y + w.h) hitWall = true; });
 
-        ctx.save();
-        ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
-
-        // Fondo y rejilla
-        ctx.strokeStyle = '#020';
-        for(let i=0; i<=5000; i+=200) {
-            ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,5000); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(5000,i); ctx.stroke();
+        if(!hitWall) {
+            player.x = nextX; player.y = nextY;
+            player.angle = Math.atan2(dy, dx);
+            player.anim += 0.2;
+            player.stretch = 1 + Math.abs(Math.sin(player.anim)) * 0.2;
+            
+            if(!trails[socket.id]) trails[socket.id] = [];
+            trails[socket.id].push({x: player.x, y: player.y});
+            if(trails[socket.id].length > 10) trails[socket.id].shift();
         }
-
-        // Dibujar muros
-        ctx.fillStyle = '#050';
-        walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
-
-        // Otros jugadores
-        ctx.fillStyle = '#f00';
-        for(let id in players) {
-            ctx.beginPath(); ctx.arc(players[id].x, players[id].y, 15, 0, Math.PI*2); ctx.fill();
-        }
-
-        // Jugador local
-        ctx.fillStyle = '#0f0';
-        ctx.shadowBlur = 15; ctx.shadowColor = '#0f0';
-        ctx.beginPath(); ctx.arc(player.x, player.y, 15, 0, Math.PI*2); ctx.fill();
-
-        ctx.restore();
     }
 
-    requestAnimationFrame(loop);
+    items.forEach(it => {
+        if(Math.hypot(player.x - it.x, player.y - it.y) < 35) {
+            if(it.type === 'weapon' && !player.hasWeapon) {
+                player.hasWeapon = true;
+                socket.emit('item_recogido', it.id);
+            } else if(it.type === 'dash') {
+                player.dashCharges = 5;
+                document.getElementById('dash-count').innerText = `DASH: ${player.dashCharges}`;
+                socket.emit('item_recogido', it.id);
+            }
+        }
+    });
+
+    if(player.hasWeapon) {
+        for(let id in players) {
+            let p = players[id];
+            if(Math.hypot(player.x - p.x, player.y - p.y) < 40) socket.emit('eliminar_jugador', id);
+        }
+    }
+
+    const dist = Math.hypot(player.x - zona.x, player.y - zona.y);
+    if(dist > zona.radio && player.vivo) {
+        if(!fueraInterval) {
+            let t = (player.type === 'cuadrado') ? 7 : 5; // Tanque dura más
+            document.getElementById('aviso-zona').style.display = 'block';
+            fueraInterval = setInterval(() => {
+                t--; document.getElementById('count-zona').innerText = t;
+                if(t <= 0) { socket.emit('eliminar_jugador', socket.id); clearInterval(fueraInterval); }
+            }, 1000);
+        }
+    } else {
+        clearInterval(fueraInterval); fueraInterval = null;
+        document.getElementById('aviso-zona').style.display = 'none';
+    }
 }
 
-window.onkeydown = e => keys[e.key.toLowerCase()] = true;
-window.onkeyup = e => keys[e.key.toLowerCase()] = false;
-loop();
+function ejecutarDash() {
+    if(player.dashCharges > 0 && player.speed < 15) {
+        const prevSpeed = player.speed;
+        player.speed = 22; player.dashCharges--;
+        document.getElementById('dash-count').innerText = `DASH: ${player.dashCharges}`;
+        setTimeout(() => player.speed = prevSpeed, 200);
+    }
+}
+
+function drawShape(p, isMe) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.angle);
+    ctx.shadowBlur = 15;
+    ctx.shadowColor = p.hasWeapon ? "#f00" : (isMe ? "#0f0" : "#555");
+    ctx.fillStyle = ctx.shadowColor;
+
+    if(p.type === 'cuadrado') {
+        ctx.fillRect(-18, -18, 36, 36);
+    } else if(p.type === 'triangulo') {
+        ctx.beginPath();
+        ctx.moveTo(22, 0); ctx.lineTo(-15, 18); ctx.lineTo(-15, -18);
+        ctx.closePath(); ctx.fill();
+    } else {
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 15 * (p.stretch || 1), 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
+    ctx.restore();
+}
+
+function draw() {
+    if(juegoIniciado) handleInput();
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    ctx.fillStyle = '#050505'; ctx.fillRect(0,0, canvas.width, canvas.height);
+    
+    if(!juegoIniciado) { requestAnimationFrame(draw); return; }
+
+    ctx.save();
+    ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+
+    ctx.fillStyle = "#1a1a1a"; walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+    for(let id in trails) {
+        ctx.beginPath(); ctx.lineWidth = 4;
+        ctx.strokeStyle = id === socket.id ? 'rgba(0, 255, 0, 0.2)' : 'rgba(255, 255, 255, 0.1)';
+        trails[id].forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+    }
+
+    particles.forEach((p, i) => {
+        p.x += p.vx; p.y += p.vy; p.life -= 0.02;
+        ctx.fillStyle = `rgba(0, 255, 0, ${p.life})`; ctx.fillRect(p.x, p.y, 3, 3);
+        if(p.life <= 0) particles.splice(i, 1);
+    });
+
+    items.forEach(it => {
+        ctx.fillStyle = it.type === 'weapon' ? '#f00' : '#0ff';
+        ctx.fillRect(it.x, it.y, 20, 20);
+    });
+
+    for(let id in players) drawShape(players[id], false);
+    if(player.vivo) {
+        drawShape(player, true);
+        socket.emit('move', { x: player.x, y: player.y, angle: player.angle, stretch: player.stretch, hasWeapon: player.hasWeapon, type: player.type });
+    }
+
+    ctx.strokeStyle = "red"; ctx.lineWidth = 10;
+    ctx.beginPath(); ctx.arc(zona.x, zona.y, zona.radio, 0, Math.PI*2); ctx.stroke();
+
+    ctx.restore();
+    requestAnimationFrame(draw);
+}
+
+const jBase = document.getElementById('joy-base'), jStick = document.getElementById('joy-stick');
+jBase.ontouchmove = e => {
+    const t = e.touches[0], r = jBase.getBoundingClientRect();
+    let dx = t.clientX - (r.left + 60), dy = t.clientY - (r.top + 60);
+    const d = Math.hypot(dx, dy); if(d > 45) { dx *= 45/d; dy *= 45/d; }
+    jStick.style.transform = `translate(${dx}px, ${dy}px)`;
+    joyX = dx/45; joyY = dy/45;
+};
+jBase.ontouchend = () => { jStick.style.transform = 'translate(0,0)'; joyX = 0; joyY = 0; };
+document.getElementById('btn-dash').ontouchstart = (e) => { e.preventDefault(); ejecutarDash(); };
+
+socket.on('has_muerto', (ranking) => {
+    player.vivo = false;
+    document.getElementById('pantalla-fin').style.display = 'flex';
+    document.getElementById('titulo-final').innerText = "ELIMINADO";
+    document.getElementById('texto-puesto').innerText = "#" + ranking;
+});
+
+socket.on('eres_ganador', (stats) => {
+    document.getElementById('pantalla-fin').style.display = 'flex';
+    document.getElementById('titulo-final').innerText = "¡CAMPEÓN!";
+    document.getElementById('texto-puesto').innerText = "#1";
+    document.getElementById('stats-jugador').innerHTML = `Victorias: ${stats.victorias} | Monedas: ${stats.monedas}`;
+});
+
+draw();
+socket.on('playerMoved', d => {
+    players[d.id] = d;
+    if(!trails[d.id]) trails[d.id] = [];
+    trails[d.id].push({x: d.x, y: d.y});
+    if(trails[d.id].length > 10) trails[d.id].shift();
+});
+socket.on('playerDisconnected', id => { delete players[id]; delete trails[id]; });
+socket.on('item_eliminado', id => items = items.filter(it => it.id !== id));
 </script>
 </body>
 </html>
+
+
