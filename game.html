@@ -282,25 +282,39 @@ function drawShape(p, isMe) {
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.rotate(p.angle);
-    ctx.shadowBlur = 15;
-    ctx.shadowColor = p.hasWeapon ? "#f00" : (isMe ? "#0f0" : "#555");
-    ctx.fillStyle = ctx.shadowColor;
 
-    if(p.type === 'cuadrado') {
-        ctx.fillRect(-18, -18, 36, 36);
-    } else if(p.type === 'triangulo') {
-        ctx.beginPath();
-        ctx.moveTo(22, 0); ctx.lineTo(-15, 18); ctx.lineTo(-15, -18);
+    // Efecto de aura mística (Estilo Ori)
+    const gradient = ctx.createRadialGradient(0, 0, 5, 0, 0, 30);
+    let mainColor = isMe ? "rgba(0, 255, 150, " : "rgba(200, 200, 200, "; // Verde místico vs Gris
+    if (p.hasWeapon) mainColor = "rgba(255, 50, 50, "; // Rojo vibrante si tiene arma
+
+    gradient.addColorStop(0, mainColor + "1)");   // Centro brillante
+    gradient.addColorStop(0.4, mainColor + "0.4)"); // Brillo suave
+    gradient.addColorStop(1, mainColor + "0)");   // Desvanecimiento
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(0, 0, 30, 0, Math.PI * 2);
+    ctx.fill();
+
+    // El "Core" o núcleo del personaje (Sustituye al círculo simple)
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = isMe ? "#0f0" : "#fff";
+    ctx.fillStyle = "#fff"; // Núcleo blanco brillante
+    
+    if (p.type === 'cuadrado') {
+        ctx.fillRect(-12, -12, 24, 24); // Tanque como un cubo de luz
+    } else if (p.type === 'triangulo') {
+        ctx.beginPath(); // Estratega como una punta de flecha de energía
+        ctx.moveTo(15, 0); ctx.lineTo(-10, 12); ctx.lineTo(-10, -12);
         ctx.closePath(); ctx.fill();
     } else {
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 15 * (p.stretch || 1), 13, 0, 0, Math.PI * 2);
+        ctx.beginPath(); // Asaltante como una gota de luz
+        ctx.ellipse(0, 0, 12 * (p.stretch || 1), 10, 0, 0, Math.PI * 2);
         ctx.fill();
     }
-    
-    if(p.hasWeapon) { ctx.fillStyle = "#fff"; ctx.fillRect(12, -4, 25, 8); }
     ctx.restore();
-}
+}    
 
 function draw() {
     if(juegoIniciado) handleInput();
