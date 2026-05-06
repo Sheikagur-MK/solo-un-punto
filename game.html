@@ -118,9 +118,14 @@ floorImg.src = 'suelo.png'; // Busca el archivo en la misma carpeta que el HTML
 
 let floorPattern;
 
-// Creamos el patrón cuando la imagen termine de cargar
+// Dentro de tu floorImg.onload
 floorImg.onload = () => {
     floorPattern = ctx.createPattern(floorImg, 'repeat');
+    
+    // Crear una matriz para ajustar la escala y evitar desfases
+    const matrix = new DOMMatrix();
+    matrix.scaleSelf(1, 1); // Puedes probar con 0.999 o 1.001 si los cortes persisten
+    floorPattern.setTransform(matrix);
 };
 
 let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
