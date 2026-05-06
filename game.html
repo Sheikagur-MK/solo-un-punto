@@ -112,11 +112,16 @@ const socket = io("https://server-solo-un-punto.onrender.com");
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// VARIABLES DE IMAGEN Y SUELO
+// Configuramos la imagen local
 const floorImg = new Image();
-floorImg.src = 'suelo.png'; 
+floorImg.src = 'suelo.png'; // Busca el archivo en la misma carpeta que el HTML
+
 let floorPattern;
-floorImg.onload = () => { floorPattern = ctx.createPattern(floorImg, 'repeat'); };
+
+// Creamos el patrón cuando la imagen termine de cargar
+floorImg.onload = () => {
+    floorPattern = ctx.createPattern(floorImg, 'repeat');
+};
 
 let player = { x: 2500, y: 2500, speed: 7.5, angle: 0, stretch: 1, anim: 0, vivo: true, hasWeapon: false, dashCharges: 0, type: 'circulo' };
 let players = {}, items = [], walls = [], zona = { x:2500, y:2500, radio:2500 };
