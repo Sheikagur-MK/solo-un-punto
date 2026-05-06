@@ -317,41 +317,49 @@ function drawShape(p, isMe) {
 }
 
 function draw() {
-    // 1. El ciclo siempre debe pedirse al inicio
+    // 1. El ciclo de animación siempre activo
     requestAnimationFrame(draw);
 
-    // 2. Ajustamos el canvas siempre
+    // 2. Ajuste de pantalla constante
     canvas.width = window.innerWidth; 
     canvas.height = window.innerHeight;
 
-    // 3. SI EL JUEGO NO HA INICIADO:
-    // Salimos de la función sin dibujar el fondo negro para que se vea el menú HTML
-    if(!juegoIniciado) return;
+    // 3. VALIDACIÓN DE LOGIN:
+    // Si el juego no ha iniciado, salimos aquí mismo. 
+    // Esto deja el Canvas transparente para que tu HTML de login sea visible.
+    if (!juegoIniciado) {
+        return; 
+    }
 
-    // 4. SI EL JUEGO YA INICIÓ:
+    // 4. LÓGICA DE JUEGO (Solo se ejecuta tras el login exitoso)
     handleInput();
     
-    // Ahora sí pintamos el fondo negro (porque ya estamos dentro del mapa)
+    // Fondo negro base del mapa
     ctx.fillStyle = '#000'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // INICIO CÁMARA
+    // INICIO DE CÁMARA
     ctx.save();
-    ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+    ctx.translate(canvas.width / 2 - player.x, canvas.height / 2 - player.y);
 
-    // Dibujamos el suelo (suelo.png)
+    // Dibujado del suelo con patrón de panal
     if (floorPattern) {
         ctx.fillStyle = floorPattern;
         ctx.fillRect(0, 0, 5000, 5000); 
     }
 
-    // Dibujamos jugadores
-    for(let id in players) drawShape(players[id], false);
-    if(player.vivo) drawShape(player, true);
+    // Dibujado de entidades
+    for (let id in players) {
+        drawShape(players[id], false);
+    }
+    
+    if (player.vivo) {
+        drawShape(player, true);
+    }
 
-    ctx.restore(); // FIN CÁMARA
+    ctx.restore(); // FIN DE CÁMARA
 
-    // 5. EFECTO VIGNETTE (Capa superior fija estilo Ori)
+    // 5. EFECTO VIGNETTE (Capa de sombras estilo Ori)
     ctx.save();
     const vignette = ctx.createRadialGradient(
         canvas.width / 2, canvas.height / 2, 0, 
@@ -362,8 +370,7 @@ function draw() {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
-} 
-// ¡Asegúrate de que no haya más llaves "}" o requestAnimationFrame debajo de esta línea!
+}
 
     // DIBUJAR SUELO DE PANAL
     if (floorPattern) { ctx.fillStyle = floorPattern; ctx.fillRect(0, 0, 5000, 5000); }
