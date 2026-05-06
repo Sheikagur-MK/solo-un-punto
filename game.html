@@ -317,41 +317,41 @@ function drawShape(p, isMe) {
 }
 
 function draw() {
-    // 1. EL CICLO NUNCA SE DETIENE
+    // 1. El ciclo siempre debe pedirse al inicio
     requestAnimationFrame(draw);
 
-    // Actualizamos entrada de teclado solo si estamos jugando
-    if(juegoIniciado) handleInput();
-    
-    // 2. LIMPIEZA DE PANTALLA
-    // Ajustamos el canvas al tamaño de la ventana siempre
+    // 2. Ajustamos el canvas siempre
     canvas.width = window.innerWidth; 
     canvas.height = window.innerHeight;
+
+    // 3. SI EL JUEGO NO HA INICIADO:
+    // Salimos de la función sin dibujar el fondo negro para que se vea el menú HTML
+    if(!juegoIniciado) return;
+
+    // 4. SI EL JUEGO YA INICIÓ:
+    handleInput();
     
-    // Fondo negro base
+    // Ahora sí pintamos el fondo negro (porque ya estamos dentro del mapa)
     ctx.fillStyle = '#000'; 
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 3. SI NO HEMOS INICIADO, NO DIBUJAMOS EL MUNDO (Pero el ciclo sigue vivo)
-    if(!juegoIniciado) return;
-
-    // 4. RENDERIZADO DEL JUEGO (Solo si juegoIniciado === true)
+    // INICIO CÁMARA
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
 
-    // Dibujamos el suelo con la imagen "suelo.png"
+    // Dibujamos el suelo (suelo.png)
     if (floorPattern) {
         ctx.fillStyle = floorPattern;
         ctx.fillRect(0, 0, 5000, 5000); 
     }
 
-    // Dibujamos a los demás y a nosotros
+    // Dibujamos jugadores
     for(let id in players) drawShape(players[id], false);
     if(player.vivo) drawShape(player, true);
 
-    ctx.restore();
+    ctx.restore(); // FIN CÁMARA
 
-    // 5. EFECTO VIGNETTE (Capa superior fija)
+    // 5. EFECTO VIGNETTE (Capa superior fija estilo Ori)
     ctx.save();
     const vignette = ctx.createRadialGradient(
         canvas.width / 2, canvas.height / 2, 0, 
@@ -362,11 +362,8 @@ function draw() {
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.restore();
-}
-
-    // El loop debe ir AQUÍ para que siempre esté escuchando si inicias sesión
-    requestAnimationFrame(draw);
-}
+} 
+// ¡Asegúrate de que no haya más llaves "}" o requestAnimationFrame debajo de esta línea!
 
     // DIBUJAR SUELO DE PANAL
     if (floorPattern) { ctx.fillStyle = floorPattern; ctx.fillRect(0, 0, 5000, 5000); }
