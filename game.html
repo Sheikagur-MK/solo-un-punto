@@ -325,7 +325,23 @@ function draw() {
 
     ctx.save();
     ctx.translate(canvas.width/2 - player.x, canvas.height/2 - player.y);
+    ctx.restore();
+    // PEGA ESTO AQUÍ:
+    ctx.save();
+    // Creamos un degradado circular que cubra toda la pantalla
+    const vignette = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0, 
+        canvas.width / 2, canvas.height / 2, canvas.width * 0.8
+    );
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');      // Centro claro para ver tu personaje
+    vignette.addColorStop(1, 'rgba(0, 0, 0, 0.7)');    // Bordes oscuros para ocultar los cortes
+    
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
+    requestAnimationFrame(draw); // Esta es la última línea de la función
+}
     // DIBUJAR SUELO DE PANAL
     if (floorPattern) { ctx.fillStyle = floorPattern; ctx.fillRect(0, 0, 5000, 5000); }
 
